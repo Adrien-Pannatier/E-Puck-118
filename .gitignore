@@ -1,1 +1,5 @@
-project_files/
+project_files/build/
+*.elf
+*.hex
+*.list
+*.map
