@@ -14,6 +14,7 @@
 int main(void)
 {
 	int vartest = 0;
+	float vartest2 = 100;
     /* Infinite loop. */
     while (1) {
     	//bonjour
