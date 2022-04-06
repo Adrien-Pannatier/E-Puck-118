@@ -14,7 +14,6 @@
 int main(void)
 {
 	int vartest = 0;
-	char s = 0;
     /* Infinite loop. */
     while (1) {
     	//bonjour
