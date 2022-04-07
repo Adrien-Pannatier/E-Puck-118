@@ -28,7 +28,7 @@
 		<link>
 			<name>e-puck2_main-processor</name>
 			<type>2</type>
-			<locationURI>copy_PARENT1/lib/e-puck2_main-processor</locationURI>
+			<location>C:/Users/adrie/Desktop/EPFL/BA6/Robotique/Projet_Robotique_2022/lib/e-puck2_main-processor</location>
 		</link>
 	</linkedResources>
 	<variableList>
