@@ -4,3 +4,7 @@ project_files/.settings/
 lib/
 Scripts_python/
 .DS_Store
+project_files/.cproject
+project_files/.project
+project_files/libssp.a
+project_files/libssp_nonshared.a
