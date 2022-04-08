@@ -1,4 +1,6 @@
 project_files/build/
 project_files/.dep/
 project_files/.settings/
-loc/
+lib/
+Scripts_python/
+.DS_Store
