@@ -148,6 +148,8 @@ static const float rocky_tempo[] = {
 
 };
 
+
+
 static const melody_t added_melodies[NB_ADDED_SONGS] = {
   //ROCKY
   {
@@ -157,8 +159,7 @@ static const melody_t added_melodies[NB_ADDED_SONGS] = {
   },
 };
 
-void playAddedMelody(added_song_selection_t choice, play_melody_option_t option, float tempo_scale){
-	choice.tempo = choice.tempo * tempo_scale;
-	playMelody(EXTERNAL_SONG, option, choice);
+void playAddedMelody(added_song_selection_t choice, play_melody_option_t option){
+	playMelody(EXTERNAL_SONG, option, &added_melodies[choice]);
 }
 
