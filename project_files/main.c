@@ -13,6 +13,7 @@
 #include <leds.h>
 #include <msgbus/messagebus.h>
 #include <audio/play_melody.h>
+#include <added_melodies.h>
 
 messagebus_t bus;
 MUTEX_DECL(bus_lock);
