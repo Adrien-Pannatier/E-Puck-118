@@ -12,6 +12,7 @@
 #include <audio/microphone.h>
 #include <leds.h>
 #include <msgbus/messagebus.h>
+#include <audio/audio_thread.h>
 #include <audio/play_melody.h>
 #include <added_melodies.h>
 
@@ -40,36 +41,21 @@ int main(void)
     messagebus_init(&bus, &bus_lock, &bus_condvar);
     proximity_start();
     spi_comm_start();
+    dac_start();
     playMelodyStart();
 
     // chThdCreateStatic(waThdFrontLed, sizeof(waThdFrontLed), NORMALPRIO, ThdFrontLed, NULL);
 
     /* Infinite loop. */
     while (1) {
-
+    	if(get_selector() == 0){
+    		playAddedMelody(ROCKY,0,0);
+    		//playMelody(STARWARS,0,0);
+    		//waitMelodyHasFinished();
+    	}
 //    	playMelody(ML_SIMPLE_PLAY,ML_WAIT_AND_CHANGE,NULL);
 //    	waitMelodyHasFinished();
 
-    	toggle_rgb_led(LED2, RED_LED,0);
-        toggle_rgb_led(LED4, RED_LED,0);
-    	toggle_rgb_led(LED6, RED_LED,0);
-        toggle_rgb_led(LED8, RED_LED,0);
-    	toggle_rgb_led(LED2, BLUE_LED,100);
-    	toggle_rgb_led(LED4, BLUE_LED,100);
-    	toggle_rgb_led(LED6, BLUE_LED,100);
-    	toggle_rgb_led(LED8, BLUE_LED,100);
-
-    	chThdSleepMilliseconds(500);
-
-    	toggle_rgb_led(LED2, BLUE_LED,0);
-    	toggle_rgb_led(LED4, BLUE_LED,0);
-    	toggle_rgb_led(LED6, BLUE_LED,0);
-    	toggle_rgb_led(LED8, BLUE_LED,0);
-    	toggle_rgb_led(LED2, RED_LED,100);
-    	toggle_rgb_led(LED4, RED_LED,100);
-    	toggle_rgb_led(LED6, RED_LED,100);
-    	toggle_rgb_led(LED8, RED_LED,100);
-    	chThdSleepMilliseconds(500);
 
     }
 }
