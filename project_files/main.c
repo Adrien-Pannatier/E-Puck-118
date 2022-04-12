@@ -17,21 +17,23 @@
 #include <added_melodies.h>
 #include "chmtx.h"
 #include "light_gestion.h"
-
+#include "audio/audio_thread.h"
 
 int main(void)
 {
     halInit();
     chSysInit();
     mpu_init();
+    dac_start();
+    playMelodyStart();
 
     LED_start();
 
     /* Infinite loop. */
     while (1) {
     	chThdSleepMilliseconds(300);
-    	if(get_selector() == 8){
-    		stopCurrentMelody();
+    	if(get_selector() == 0){
+    		playMelody(IMPOSSIBLE_MISSION, 0,0);
     	}
 
     	}
