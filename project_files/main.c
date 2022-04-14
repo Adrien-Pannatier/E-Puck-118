@@ -11,10 +11,14 @@
 #include <motors.h>
 #include <audio/microphone.h>
 #include <leds.h>
+
 #include <msgbus/messagebus.h>
 #include <audio/audio_thread.h>
 #include <audio/play_melody.h>
 #include <added_melodies.h>
+
+#include <process_image.h>
+#include <camera/po8030.h>
 
 messagebus_t bus;
 MUTEX_DECL(bus_lock);
@@ -43,6 +47,10 @@ int main(void)
     spi_comm_start();
     dac_start();
     playMelodyStart();
+
+    //starts the camera
+    dcmi_start();
+   	po8030_start();
 
     // chThdCreateStatic(waThdFrontLed, sizeof(waThdFrontLed), NORMALPRIO, ThdFrontLed, NULL);
 
