@@ -48,10 +48,12 @@ int main(void)
 
     /* Infinite loop. */
     while (1) {
-    	if(get_selector() == 0){
-    		playAddedMelody(ROCKY,0,0);
-    		//playMelody(STARWARS,0,0);
-    		//waitMelodyHasFinished();
+
+    	switch(get_selector())
+    	{
+    	case 0: playAddedMelody(ROCKY, 0,2);break;
+    	case 1: stopCurrentMelody();break;
+    	default: break;
     	}
 //    	playMelody(ML_SIMPLE_PLAY,ML_WAIT_AND_CHANGE,NULL);
 //    	waitMelodyHasFinished();
