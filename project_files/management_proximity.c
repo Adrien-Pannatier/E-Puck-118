@@ -14,9 +14,11 @@
 #include "sensors/proximity.h"
 #include <usbcfg.h>
 #include "chprintf.h"
+#include "sensors/VL53L0X/VL53L0X.h"
 
 //Sensor value (0-4000)
 static uint16_t tab_prox[PROXIMITY_NB_CHANNELS] = {0};
+static uint16_t forward_dist = 0;
 
 static THD_WORKING_AREA(waThdManagementProximity, 512);
 static THD_FUNCTION(ThdManagementProximity, arg) {
@@ -32,6 +34,9 @@ static THD_FUNCTION(ThdManagementProximity, arg) {
     //Start proximity sensors
     proximity_start();
     calibrate_ir();
+    VL53L0X_start();
+
+
 
     //Realterm
     usb_start();
@@ -42,8 +47,9 @@ static THD_FUNCTION(ThdManagementProximity, arg) {
     	for(int i = 0; i < PROXIMITY_NB_CHANNELS; i++){
     		tab_prox[i] = get_calibrated_prox(i);
     	}
+    	forward_dist = VL53L0X_get_dist_mm();
 
-
+    	chprintf((BaseSequentialStream *)&SD3, "Distance = %u \n\n\r", forward_dist);
 //    	chprintf((BaseSequentialStream *)&SD3, "IR1 = %u IR2 = %u IR3 = %u IR4 = %u IR5 = %u IR6 = %u IR7 = %u IR8 = %u \n\n\r",
 //    			tab_prox[0], tab_prox[1], tab_prox[2], tab_prox[3], tab_prox[4], tab_prox[5], tab_prox[6], tab_prox[7]);
 
