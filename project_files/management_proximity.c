@@ -15,10 +15,8 @@
 #include <usbcfg.h>
 #include "chprintf.h"
 
-//messagebus_t bus;
-//static messagebus_t bus;
-//static MUTEX_DECL(IR_lock);
-//static CONDVAR_DECL(IR_condvar);
+//Sensor value (0-4000)
+static uint16_t tab_prox[PROXIMITY_NB_CHANNELS] = {0};
 
 static THD_WORKING_AREA(waThdManagementProximity, 512);
 static THD_FUNCTION(ThdManagementProximity, arg) {
@@ -39,18 +37,17 @@ static THD_FUNCTION(ThdManagementProximity, arg) {
     usb_start();
     serial_start();
 
-	//Sensor value
-    uint16_t tab_prox[PROXIMITY_NB_CHANNELS] = {0};
-
     while(1){
 
     	for(int i = 0; i < PROXIMITY_NB_CHANNELS; i++){
     		tab_prox[i] = get_calibrated_prox(i);
     	}
 
-    	chprintf((BaseSequentialStream *)&SD3, "%u \n\n\r", tab_prox[0]);
 
-    	chThdSleepMilliseconds(50);
+//    	chprintf((BaseSequentialStream *)&SD3, "IR1 = %u IR2 = %u IR3 = %u IR4 = %u IR5 = %u IR6 = %u IR7 = %u IR8 = %u \n\n\r",
+//    			tab_prox[0], tab_prox[1], tab_prox[2], tab_prox[3], tab_prox[4], tab_prox[5], tab_prox[6], tab_prox[7]);
+
+    	chThdSleepMilliseconds(500);
 
     }
 }
@@ -59,6 +56,13 @@ void management_proximity_start(void){
 	chThdCreateStatic(waThdManagementProximity, sizeof(waThdManagementProximity), NORMALPRIO, ThdManagementProximity, NULL);
 }
 
+uint16_t get_distance(uint8_t IR_number){
+
+	//Check if IR_number is a valid number, return the distance in intensity (0-4000)
+
+	if(IR_number <= 8) return(tab_prox[IR_number]);
+	else return(0);
+}
 
 // COM
 
