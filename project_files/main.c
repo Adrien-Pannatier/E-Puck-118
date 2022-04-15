@@ -14,7 +14,9 @@
 #include <msgbus/messagebus.h>
 #include <audio/audio_thread.h>
 #include <audio/play_melody.h>
+#include <sensors/proximity.h>
 #include <added_melodies.h>
+#include "spi_comm.h"
 
 messagebus_t bus;
 MUTEX_DECL(bus_lock);
@@ -25,13 +27,18 @@ int main(void)
     halInit();
     chSysInit();
     mpu_init();
-    messagebus_init(&bus, &bus_lock, &bus_condvar);
-    dac_start();
+
+    spi_comm_start();
     playMelodyStart();
 
+    management_proximity_start();
+
+    messagebus_init(&bus, &bus_lock, &bus_condvar);
 
     /* Infinite loop. */
     while (1) {
+
+    	chThdSleepMilliseconds(500);
 
     }
 }

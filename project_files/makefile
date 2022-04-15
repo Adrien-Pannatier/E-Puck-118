@@ -12,6 +12,7 @@ GLOBAL_PATH = ../lib/e-puck2_main-processor
 CSRC += ./main.c \
 		./added_melodies.c\
 		./management_movement.c\
+		./management_proximity.c\
 
 
 #Header folders to include
