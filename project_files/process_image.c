@@ -40,7 +40,7 @@ uint16_t extract_line_width(uint8_t *buffer){
 		{ 
 			//the slope must at least be WIDTH_SLOPE wide and is compared
 		    //to the mean of the image
-		    if(buffer[i] > mean && buffer[i+WIDTH_SLOPE] < mean)
+		    if(buffer[i] < mean && buffer[i+WIDTH_SLOPE] > mean)                  //INVERSE CAR ON CHERCHE UN PIC D'INTENSITE
 		    {
 		        begin = i;
 		        stop = 1;
@@ -54,7 +54,7 @@ uint16_t extract_line_width(uint8_t *buffer){
 		    
 		    while(stop == 0 && i < IMAGE_BUFFER_SIZE)
 		    {
-		        if(buffer[i] > mean && buffer[i-WIDTH_SLOPE] < mean)
+		        if(buffer[i] < mean && buffer[i-WIDTH_SLOPE] > mean)			//INVERSE CAR ON CHERCHE UN PIC D'INTENSITE
 		        {
 		            end = i;
 		            stop = 1;
@@ -168,7 +168,7 @@ float get_distance_cm(void){
 	return distance_cm;
 }
 
-uint16_t get_line_position(void){
+uint16_t get_peak_position(void){
 	return line_position;
 }
 
