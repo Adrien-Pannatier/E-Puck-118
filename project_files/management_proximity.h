@@ -20,12 +20,13 @@
 #define IR7					6
 #define IR8					7
 
-#define MAX_INTENSITY		4000
+#define MAX_INTENSITY		3500.0
+#define NOISE_IR			50
 
 void management_proximity_start(void);
 
 //return the distance of the IR sensor
-uint16_t get_distance(uint8_t IR_number);
+uint16_t get_intensity(uint8_t IR_number);
 
 //COM
 static void serial_start(void);

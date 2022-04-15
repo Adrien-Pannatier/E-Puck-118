@@ -17,6 +17,8 @@
 #include <sensors/proximity.h>
 #include <added_melodies.h>
 #include "spi_comm.h"
+#include "management_proximity.h"
+#include "management_movement.h"
 
 messagebus_t bus;
 MUTEX_DECL(bus_lock);
@@ -31,7 +33,9 @@ int main(void)
     spi_comm_start();
     playMelodyStart();
 
+    //start movement related thread
     management_proximity_start();
+    management_movement_start();
 
     messagebus_init(&bus, &bus_lock, &bus_condvar);
 
