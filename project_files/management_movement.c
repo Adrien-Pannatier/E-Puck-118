@@ -16,15 +16,16 @@
 #include "sensors/proximity.h"
 #include "sensors/VL53L0X/VL53L0X.h"
 #include "chprintf.h"
-
+#include "button.h"
+#include "selector.h"
 
 //Moving state
-#define STOP							0
-#define MOVING							1
-#define REACHING_INTERSECTION			2
-#define ROTATING						3
-#define LEAVING_INTERSECTION			4
-#define FIRE_FIGHTING					5
+#define STOP							0												//No movement
+#define MOVING							1												//Following a corridor
+#define REACHING_INTERSECTION			2												//Reaching the middle of an intersection
+#define ROTATING						3												//Choosing the next path and rotating in the intersection
+#define LEAVING_INTERSECTION			4												//Regaining the corridor
+#define FIRE_FIGHTING					5												//Taking actions against fire
 
 //Moving parameters
 #define CERTAINTY						10												//minimum occurrence of a measure to have a good confidence
@@ -37,6 +38,7 @@
 #define ROTATIONAL_SPEED				280
 #define STEP_TO_REACH_THE_MIDDLE		320 //(MAZE_WIDTH/2*NSTEP_ONE_TURN/WHEEL_PERIMETER) 	//[step]
 #define SPEED_NUL						0
+#define HISTORY_SIZE					10												//Size of navigation history buffer (store history of movements)
 #define RIGHT_360						1316											//[step]
 #define RIGHT_180						658												//[step]
 #define RIGHT_90						329												//[step]
@@ -58,6 +60,8 @@
 static uint8_t movement_state = STOP;
 static bool fire_detected = false;
 static bool opening_right = false, opening_left = false, opening_front = false;
+static int16_t buffer_navigation_history[HISTORY_SIZE];
+static int8_t ptr_buffer_nav = 0;
 
 //provisoir pour tunning
 static float Kd_tun = 1.65;
@@ -75,28 +79,6 @@ int32_t absolute_value_int32(int32_t value){
 	return value;
 }
 
-
-void PID_tuning(void){
-	static int state = 0;
-	int max_state = 3;
-
-	if(button_get_state() == 1)
-	{
-		if(state <= max_state) state++;
-		else state = 0;
-	}
-
-	switch(state)
-	{
-	case 0: break;
-	case 1: set_led(LED1, 1); Kp_tun += incr * infinity_selector();
-	chprintf((BaseSequentialStream *)&SD3, "KP = %.2f \n\n\r", Kp_tun);break;
-	case 2: set_led(LED3, 1); Kd_tun += incr * infinity_selector();
-	chprintf((BaseSequentialStream *)&SD3, "KD = %.2f \n\n\r", Kd_tun);break;
-	case 3: break;
-	}
-
-}
 
 int infinity_selector(void){
 	static int last_pos = 0;
@@ -124,6 +106,28 @@ int infinity_selector(void){
 int16_t absolute_value_int16(int16_t value){
 	if(value < 0) value = -value;
 	return value;
+}
+
+void PID_tuning(void){
+	static int state = 0;
+	int max_state = 3;
+
+	if(button_get_state() == 1)
+	{
+		if(state <= max_state) state++;
+		else state = 0;
+	}
+
+	switch(state)
+	{
+	case 0: break;
+	case 1: set_led(LED1, 1); Kp_tun += incr * infinity_selector();
+	chprintf((BaseSequentialStream *)&SD3, "KP = %.2f \n\n\r", Kp_tun);break;
+	case 2: set_led(LED3, 1); Kd_tun += incr * infinity_selector();
+	chprintf((BaseSequentialStream *)&SD3, "KD = %.2f \n\n\r", Kd_tun);break;
+	case 3: break;
+	}
+
 }
 
 
@@ -159,6 +163,11 @@ void movement_regulation(void)
 	right_motor_set_speed(SPEED_STEP + correction);
 	left_motor_set_speed(SPEED_STEP - correction);
 
+	//Save history of movements
+	buffer_navigation_history[ptr_buffer_nav] = correction;
+	ptr_buffer_nav++;
+	if(ptr_buffer_nav == HISTORY_SIZE) ptr_buffer_nav = 0;
+
 }
 
 
@@ -190,17 +199,49 @@ bool check_for_corridor(void){
 	return NOT_COMPLETE;
 }
 
+bool trajectory_correction(void){
+
+	static uint8_t counter = 0;
+
+	//Rewind back some movements after a wrong correction
+	if(ptr_buffer_nav == 0) ptr_buffer_nav = HISTORY_SIZE;
+	ptr_buffer_nav--;
+
+	right_motor_set_speed(SPEED_STEP - buffer_navigation_history[ptr_buffer_nav]);
+	left_motor_set_speed(SPEED_STEP + buffer_navigation_history[ptr_buffer_nav]);
+
+	counter++;
+	if(counter == HISTORY_SIZE){
+		counter = 0;
+		return COMPLETE;
+	}
+
+	return NOT_COMPLETE;
+}
+
 bool moving_in_intersection(void){
 
 	static bool init_counter = false;
+	static bool correction_complete = false;
 
-
-	//init the counter only one time and start moving forward
+	//init the counter only one time
 	if(!init_counter)
 	{
 		right_motor_set_pos(0);
 		init_counter = true;
+	}
 
+	//init the correction of trajectory
+	if(!correction_complete)
+	{
+		//DEV
+		if(get_selector() == 1){
+			if(trajectory_correction() == COMPLETE) correction_complete = COMPLETE;
+		}
+		else correction_complete = true;
+	}
+	else
+	{
 		right_motor_set_speed(SPEED_STEP);
 		left_motor_set_speed(SPEED_STEP);
 	}
@@ -210,7 +251,7 @@ bool moving_in_intersection(void){
 	{
 	    stop_movement();
 	    init_counter = false;
-	    movement_state = ROTATING;
+	    correction_complete = NOT_COMPLETE;
 
 	    //store openings
 		if(VL53L0X_get_dist_mm() >= VL53L0X_OPENING) opening_front = true;
@@ -257,7 +298,7 @@ bool rotate(int rotation_angle){
 	return NOT_COMPLETE;
 }
 
-bool choose_next_path(){
+bool choose_next_path(void){
 
 	//Follow the right wall, return complete when the rotation is done
 	if(opening_right)
@@ -303,35 +344,33 @@ static THD_FUNCTION(Movement, arg) {
 
     	switch(movement_state){
 
-    	//No movement
-    	case STOP: stop_movement(); break;
 
-    	//Following a corridor
-    	case MOVING: movement_regulation();
-    		if(check_for_openings() == COMPLETE){
-    			movement_state = REACHING_INTERSECTION;
-    			set_led(LED1, 1);
-    		}
-    		break;
+       	case STOP: 					stop_movement(); break;
 
-    	//Reaching the middle of an intersection
+
+    	case MOVING: 				movement_regulation();	//check impasse a faire
+    								if(check_for_openings() == COMPLETE) movement_state = REACHING_INTERSECTION; break;
+
+
     	case REACHING_INTERSECTION: if(moving_in_intersection() == COMPLETE) movement_state = ROTATING;
-    		else if(check_for_corridor() == COMPLETE) movement_state = MOVING; break;
+    								else if(check_for_corridor() == COMPLETE) movement_state = MOVING; break;
 
-    	//Choosing the next path and rotating in the intersection
-    	case ROTATING: if(choose_next_path() == COMPLETE){
-    			movement_state = STOP;
-    			opening_front = false;
-    			opening_left = false;
-    			opening_right = false;
-    			set_led(LED3, 1);
-    		}
-    		break;
 
-    	//Regaining the corridor
+    	case ROTATING: 				if(choose_next_path() == COMPLETE){
+										movement_state = STOP;
+
+										//DEV
+										opening_front = false;
+										opening_left = false;
+										opening_right = false;
+										set_led(LED3, 1);
+									}
+    								break;
+
+
     	case LEAVING_INTERSECTION: break;
 
-    	//Taking actions against fire
+
     	case FIRE_FIGHTING: break;
 
     	default: movement_state = STOP; break;
