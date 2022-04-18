@@ -38,7 +38,7 @@
 #define ROTATIONAL_SPEED				280
 #define STEP_TO_REACH_THE_MIDDLE		280 //(MAZE_WIDTH/2*NSTEP_ONE_TURN/WHEEL_PERIMETER) 	//[step]
 #define SPEED_NUL						0
-#define HISTORY_SIZE					10												//Size of navigation history buffer (store history of movements)
+#define HISTORY_SIZE					40												//Size of navigation history buffer (store history of movements)
 #define RIGHT_360						1316											//[step]
 #define RIGHT_180						658												//[step]
 #define RIGHT_90						329												//[step]

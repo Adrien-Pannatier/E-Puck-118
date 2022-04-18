@@ -21,7 +21,7 @@
 #define IR8					7
 
 #define MAX_INTENSITY		3500.0
-#define NOISE_IR			25
+#define NOISE_IR			35
 #define MAX_RANGE_IR		100 		//[mm]
 
 void management_proximity_start(void);
