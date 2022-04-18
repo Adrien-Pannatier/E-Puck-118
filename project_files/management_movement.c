@@ -28,15 +28,15 @@
 #define FIRE_FIGHTING					5												//Taking actions against fire
 
 //Moving parameters
-#define CERTAINTY						10												//minimum occurrence of a measure to have a good confidence
+#define CERTAINTY						3												//minimum occurrence of a measure to have a good confidence
 #define R_EPUCK							3.5												//[cm]
 #define MAZE_WIDTH						10												//[cm]
 #define NSTEP_ONE_TURN   				1000 											//number of step for 1 turn of the motor
 #define WHEEL_PERIMETER     			13 												//[cm]
 #define SPEED							6												//[cm/s]
-#define SPEED_STEP						(SPEED*NSTEP_ONE_TURN/WHEEL_PERIMETER)			//[step/s]
+#define SPEED_STEP						(SPEED*NSTEP_ONE_TURN/WHEEL_PERIMETER)			//[step/s] ()
 #define ROTATIONAL_SPEED				280
-#define STEP_TO_REACH_THE_MIDDLE		320 //(MAZE_WIDTH/2*NSTEP_ONE_TURN/WHEEL_PERIMETER) 	//[step]
+#define STEP_TO_REACH_THE_MIDDLE		280 //(MAZE_WIDTH/2*NSTEP_ONE_TURN/WHEEL_PERIMETER) 	//[step]
 #define SPEED_NUL						0
 #define HISTORY_SIZE					10												//Size of navigation history buffer (store history of movements)
 #define RIGHT_360						1316											//[step]
@@ -55,7 +55,7 @@
 
 //a changer
 #define VL53L0X_OPENING					100												//distance considered for opening [mm]
-
+#define VL53L0X_OBSTRUCTED				50												//distance considered for obstructed [mm]
 
 static uint8_t movement_state = STOP;
 static bool fire_detected = false;
@@ -125,7 +125,8 @@ void PID_tuning(void){
 	chprintf((BaseSequentialStream *)&SD3, "KP = %.2f \n\n\r", Kp_tun);break;
 	case 2: set_led(LED3, 1); Kd_tun += incr * infinity_selector();
 	chprintf((BaseSequentialStream *)&SD3, "KD = %.2f \n\n\r", Kd_tun);break;
-	case 3: break;
+	case 3: set_led(LED5, 1);
+	break;
 	}
 
 }
@@ -159,6 +160,13 @@ void movement_regulation(void)
 	correction = Kp_tun * error + Kd_tun * (error - past_error);
 	past_error = error;
 
+	//Smoother
+	if(get_selector() == 1){
+			if(correction > ROTATIONAL_SPEED) correction = ROTATIONAL_SPEED;
+			else if(correction < -ROTATIONAL_SPEED) correction = -ROTATIONAL_SPEED;
+	}
+
+
 	//set motor speed
 	right_motor_set_speed(SPEED_STEP + correction);
 	left_motor_set_speed(SPEED_STEP - correction);
@@ -174,11 +182,31 @@ void movement_regulation(void)
 bool check_for_openings(void){
 
 	//if opening detected
-//	if(get_distance_IR_mm(IR3) >= MAX_RANGE_IR || get_distance_IR_mm(IR6) >= MAX_RANGE_IR) //a voir la meilleure solution
-	if(get_calibrated_prox(IR3) <= NOISE_IR || get_calibrated_prox(IR6) <= NOISE_IR)
+	if(get_calibrated_prox(IR3) < NOISE_IR || get_calibrated_prox(IR6) < NOISE_IR)
 	{
 		return COMPLETE;
 	}
+	return NOT_COMPLETE;
+}
+
+bool check_for_dead_end(void){
+
+	static uint8_t certainty_counter = 0;
+
+	//if front is obstructed return complete
+
+	if(VL53L0X_get_dist_mm() <= VL53L0X_OBSTRUCTED)
+	{
+		if(certainty_counter >= CERTAINTY)
+		{
+			certainty_counter = 0;
+			return COMPLETE;
+		}
+		//counter to avoid noise
+		certainty_counter++;
+	}
+	else if(VL53L0X_get_dist_mm() >= VL53L0X_OPENING) certainty_counter = 0;
+
 	return NOT_COMPLETE;
 }
 
@@ -196,6 +224,8 @@ bool check_for_corridor(void){
 			//counter to avoid noise
 			certainty_counter++;
 		}
+	else if(get_calibrated_prox(IR3) <= NOISE_IR || get_calibrated_prox(IR6) <= NOISE_IR) certainty_counter = 0;
+
 	return NOT_COMPLETE;
 }
 
@@ -234,11 +264,7 @@ bool moving_in_intersection(void){
 	//init the correction of trajectory
 	if(!correction_complete)
 	{
-		//DEV
-		if(get_selector() == 1){
 			if(trajectory_correction() == COMPLETE) correction_complete = COMPLETE;
-		}
-		else correction_complete = true;
 	}
 	else
 	{
@@ -253,10 +279,21 @@ bool moving_in_intersection(void){
 	    init_counter = false;
 	    correction_complete = NOT_COMPLETE;
 
-	    //store openings
-		if(VL53L0X_get_dist_mm() >= VL53L0X_OPENING) opening_front = true;
-		if(get_calibrated_prox(IR3) <= NOISE_IR) opening_right = true;
-		if(get_calibrated_prox(IR6) <= NOISE_IR) opening_left = true;
+
+	    //DANS CHOOSE NEXT PATH
+//	    //store openings
+//		if(VL53L0X_get_dist_mm() >= VL53L0X_OPENING){
+//			opening_front = true;
+//			set_led(LED1, 1);
+//		}
+//		if(get_calibrated_prox(IR3) <= NOISE_IR){
+//			opening_right = true;
+//			set_led(LED3, 1);
+//		}
+//		if(get_calibrated_prox(IR6) <= NOISE_IR){
+//			opening_left = true;
+//			set_led(LED7, 1);
+//		}
 
 		return COMPLETE;
 	}
@@ -300,26 +337,77 @@ bool rotate(int rotation_angle){
 
 bool choose_next_path(void){
 
+	static bool check_openings = NOT_COMPLETE;
+
+	//store openings
+	if(check_openings == NOT_COMPLETE){
+
+		if(VL53L0X_get_dist_mm() >= VL53L0X_OPENING){
+		opening_front = true;
+		set_led(LED1, 1);
+		}
+		if(get_calibrated_prox(IR3) <= NOISE_IR){
+			opening_right = true;
+			set_led(LED3, 1);
+		}
+		if(get_calibrated_prox(IR6) <= NOISE_IR){
+			opening_left = true;
+			set_led(LED7, 1);
+		}
+		check_openings = COMPLETE;
+	}
+
 	//Follow the right wall, return complete when the rotation is done
 	if(opening_right)
 	{
-		if(rotate(RIGHT_90) == COMPLETE) return COMPLETE;
+		if(rotate(RIGHT_90) == COMPLETE){
+			check_openings = NOT_COMPLETE;
+			return COMPLETE;
+		}
 		else return NOT_COMPLETE;
 	}
 	if(opening_front)
 	{
+		check_openings = NOT_COMPLETE;
 		return COMPLETE;
 	}
 	if(opening_left)
 	{
-		if(rotate(LEFT_90) == COMPLETE) return COMPLETE;
+		if(rotate(LEFT_90) == COMPLETE){
+			check_openings = NOT_COMPLETE;
+			return COMPLETE;
+		}
 		else return NOT_COMPLETE;
 	}
 	else
 	{
-		if(rotate(RIGHT_180) == COMPLETE) return COMPLETE;
+		if(rotate(RIGHT_180) == COMPLETE){
+			check_openings = NOT_COMPLETE;
+			return COMPLETE;
+		}
 		else return NOT_COMPLETE;
 	}
+}
+
+bool join_corridor(void){
+
+	//go forward until a corridor is reached
+	right_motor_set_speed(SPEED_STEP);
+	left_motor_set_speed(SPEED_STEP);
+
+	if(check_for_corridor() == COMPLETE){
+
+		//reset opening bool and speed init
+		opening_front = false;
+		opening_left = false;
+		opening_right = false;
+
+		clear_leds();
+
+		return COMPLETE;
+	}
+
+	return NOT_COMPLETE;
 }
 
 static THD_WORKING_AREA(waThdMovement, 512);
@@ -329,18 +417,23 @@ static THD_FUNCTION(Movement, arg) {
 
     //Thread motors init
     motors_init();
+    systime_t time;
 
     while(1){
 
+    	time = chVTGetSystemTime();
+
+    	//chprintf((BaseSequentialStream *)&SD3, "Thd time = %d\n", thd_time);
+
     	//PID_tuning();
 
-    	//restart movement
-    	if(button_get_state() == 1)
-    	{
-    		chThdSleepSeconds(1);
-    		clear_leds();
-    		movement_state = MOVING;
+    	//Selector control
+    	if(get_selector() == 0) movement_state = STOP;
+    	else if(movement_state == STOP){
+    		chThdSleepMilliseconds(500);
+    		movement_state = LEAVING_INTERSECTION;
     	}
+
 
     	switch(movement_state){
 
@@ -348,35 +441,30 @@ static THD_FUNCTION(Movement, arg) {
        	case STOP: 					stop_movement(); break;
 
 
-    	case MOVING: 				movement_regulation();	//check impasse a faire
-    								if(check_for_openings() == COMPLETE) movement_state = REACHING_INTERSECTION; break;
+    	case MOVING: 				movement_regulation();
+    								if(check_for_openings() == COMPLETE) movement_state = REACHING_INTERSECTION;
+    								if(check_for_dead_end() == COMPLETE) movement_state = ROTATING; break;
 
 
     	case REACHING_INTERSECTION: if(moving_in_intersection() == COMPLETE) movement_state = ROTATING;
     								else if(check_for_corridor() == COMPLETE) movement_state = MOVING; break;
 
 
-    	case ROTATING: 				if(choose_next_path() == COMPLETE){
-										movement_state = STOP;
-
-										//DEV
-										opening_front = false;
-										opening_left = false;
-										opening_right = false;
-										set_led(LED3, 1);
-									}
-    								break;
+    	case ROTATING: 				if(choose_next_path() == COMPLETE) movement_state = LEAVING_INTERSECTION;break;
 
 
-    	case LEAVING_INTERSECTION: break;
-
+    	case LEAVING_INTERSECTION: if(join_corridor() == COMPLETE) movement_state = MOVING;
+    							   if(check_for_dead_end() == COMPLETE) movement_state = ROTATING; break;
 
     	case FIRE_FIGHTING: break;
 
     	default: movement_state = STOP; break;
     	}
 
-    	chThdSleepMilliseconds(50);
+
+    	//if(get_selector() == 1) chprintf((BaseSequentialStream *)&SD3, "Thd time = %d\n\n\r", chVTGetSystemTime()-time);
+
+    	chThdSleepUntilWindowed(time, time + MS2ST(50));
 
     }
 }
