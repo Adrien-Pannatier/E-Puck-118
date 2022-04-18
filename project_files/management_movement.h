@@ -8,7 +8,22 @@
 #ifndef MANAGEMENT_MOVEMENT_H_
 #define MANAGEMENT_MOVEMENT_H_
 
+//Moving state
+#define STOP							0												//No movement
+#define MOVING							1												//Following a corridor
+#define REACHING_INTERSECTION			2												//Reaching the middle of an intersection
+#define ROTATING						3												//Choosing the next path and rotating in the intersection
+#define LEAVING_INTERSECTION			4												//Regaining the corridor
+#define FIRE_FIGHTING					5												//Taking actions against fire
+
+#define NORTH							0
+#define EAST							1
+#define SOUTH							2
+#define WEST							3
+
 void management_movement_start(void);
 bool get_fire_detected(void);
+uint8_t get_movement_state(void);
+uint8_t get_orientation(void);
 
 #endif /* MANAGEMENT_MOVEMENT_H_ */

@@ -19,13 +19,6 @@
 #include "button.h"
 #include "selector.h"
 
-//Moving state
-#define STOP							0												//No movement
-#define MOVING							1												//Following a corridor
-#define REACHING_INTERSECTION			2												//Reaching the middle of an intersection
-#define ROTATING						3												//Choosing the next path and rotating in the intersection
-#define LEAVING_INTERSECTION			4												//Regaining the corridor
-#define FIRE_FIGHTING					5												//Taking actions against fire
 
 //Moving parameters
 #define CERTAINTY						3												//minimum occurrence of a measure to have a good confidence
@@ -58,6 +51,7 @@
 #define VL53L0X_OBSTRUCTED				50												//distance considered for obstructed [mm]
 
 static uint8_t movement_state = STOP;
+static uint8_t orientation = NORTH;
 static bool fire_detected = false;
 static bool opening_right = false, opening_left = false, opening_front = false;
 static int16_t buffer_navigation_history[HISTORY_SIZE];
@@ -135,6 +129,14 @@ void PID_tuning(void){
 
 bool get_fire_detected(void){
 	return(fire_detected);
+}
+
+uint8_t get_movement_state(void){
+	return movement_state;
+}
+
+uint8_t get_orientation(void){
+	return orientation;
 }
 
 
@@ -278,22 +280,6 @@ bool moving_in_intersection(void){
 	    stop_movement();
 	    init_counter = false;
 	    correction_complete = NOT_COMPLETE;
-
-
-	    //DANS CHOOSE NEXT PATH
-//	    //store openings
-//		if(VL53L0X_get_dist_mm() >= VL53L0X_OPENING){
-//			opening_front = true;
-//			set_led(LED1, 1);
-//		}
-//		if(get_calibrated_prox(IR3) <= NOISE_IR){
-//			opening_right = true;
-//			set_led(LED3, 1);
-//		}
-//		if(get_calibrated_prox(IR6) <= NOISE_IR){
-//			opening_left = true;
-//			set_led(LED7, 1);
-//		}
 
 		return COMPLETE;
 	}
