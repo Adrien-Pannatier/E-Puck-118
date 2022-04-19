@@ -72,8 +72,8 @@ static THD_FUNCTION(ThdManagementProximity, arg) {
 //    	chprintf((BaseSequentialStream *)&SD3, "Intensity IR3 = %u \n\n\r", get_calibrated_prox(IR3));
 
 //    	chprintf((BaseSequentialStream *)&SD3, "Distance = %u \n\n\r", forward_dist);
-    	chprintf((BaseSequentialStream *)&SD3, "IR1 = %u IR2 = %u IR3 = %u IR4 = %u IR5 = %u IR6 = %u IR7 = %u IR8 = %u \n\n\r",
-    			tab_prox[0], tab_prox[1], tab_prox[2], tab_prox[3], tab_prox[4], tab_prox[5], tab_prox[6], tab_prox[7]);
+//    	chprintf((BaseSequentialStream *)&SD3, "IR1 = %u IR2 = %u IR3 = %u IR4 = %u IR5 = %u IR6 = %u IR7 = %u IR8 = %u \n\n\r",
+//    			tab_prox[0], tab_prox[1], tab_prox[2], tab_prox[3], tab_prox[4], tab_prox[5], tab_prox[6], tab_prox[7]);
 
 //    	tab_prox[IR3] = get_intensity(IR3);
 //    	tab_prox[IR4] = get_calibrated_prox(IR3);

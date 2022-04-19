@@ -17,13 +17,11 @@
 #define FIRE_FIGHTING					5												//Taking actions against fire
 
 #define NORTH							0
-#define EAST							1
-#define SOUTH							2
-#define WEST							3
+#define EAST							90
+#define SOUTH							180
+#define WEST							270
 
 void management_movement_start(void);
-bool get_fire_detected(void);
-uint8_t get_movement_state(void);
-uint8_t get_orientation(void);
+
 
 #endif /* MANAGEMENT_MOVEMENT_H_ */

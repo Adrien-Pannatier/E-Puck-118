@@ -7,59 +7,113 @@
 
 //defines used for transmission
 #include "management_movement.h"
+#include "ch.h"
+#include "hal.h"
 
-#define CORRIDOR							1	// |  |
+//Code used for transmission for mapping
 
-#define CROSSING_L_RIGHT					2	//  -----
-#define CROSSING_L_RIGHT_FIRE				3	// |   __
-												// |  |
+#define NO_TRANSMISSION						0		//Transmission neutral
 
-#define CROSSING_L_LEFT						4	// -----
-#define CROSSING_L_LEFT_FIRE				5	// __   |
-												//   |  |
+#define CORRIDOR							1		// |  |
 
-#define CROSSING_T							6	// ----------
-#define CROSSING_T_FIRE_RIGHT				7	// ___    ___
-#define CROSSING_T_FIRE_LEFT				8	//    |  |
-#define CROSSING_T_FIRE_ALL					9
+#define MOVING_IN_INTERSECTION				2		//Going forward without drawing
 
-#define CROSSING_T_LEFT						10	//     |  |
-#define CROSSING_T_LEFT_FIRE_LEFT			11	// ----   |
-#define CROSSING_T_LEFT_FIRE_UP				12	// ____   |
-#define CROSSING_T_LEFT_FIRE_ALL			13	//     |  |
+#define FIRE_DETECTED						11		//Fire in front
 
-#define CROSSING_T_RIGHT					14	// |  |
-#define CROSSING_T_RIGHT_FIRE_RIGHT			15	// |   ----
-#define CROSSING_T_RIGHT_FIRE_UP			16	// |   ____
-#define CROSSING_T_RIGHT_FIRE_ALL			17	// |  |
+#define CROSSING_T							12		// ----------
+													// ___    ___
+													//    |  |
 
-#define CROSSING_X							18	//    |  |
-#define CROSSING_X_FIRE_RIGHT				19	// ---    ---
-#define CROSSING_X_FIRE_UP					20	// ___    ___
-#define CROSSING_X_FIRE_LEFT				21	//    |  |
-#define CROSSING_X_FIRE_RIGHT_UP			22
-#define CROSSING_X_FIRE_LEFT_UP				23
-#define CROSSING_X_FIRE_RIGHT_LEFT			24
-#define CROSSING_X_FIRE_ALL					25
+#define CROSSING_T_RIGHT					13		// |  |
+													// |   ----
+													// |   ____
+													// |  |
 
-#define DEAD_END							26	//  __
-#define DEAD_END_FIRE						27	// |  |
+#define CROSSING_T_LEFT						14		//     |  |
+													// ----   |
+													// ____   |
+													//     |  |
 
-void store_buffer(int map_configuration){
+#define CROSSING_L_LEFT						15		// -----
+													// __   |
+													//   |  |
+
+#define CROSSING_L_RIGHT					16		//  -----
+													// |   __
+													// |  |
+
+
+
+#define CROSSING_X							17		//    |  |
+													// ---    ---
+													// ___    ___
+													//    |  |
+
+
+#define DEAD_END							18		//  __
+													// |  |
+
+#define FACING_UP							21		//North
+#define FACING_DOWN							22		//West
+#define FACING_RIGHT						23		//East
+#define FACING_LEFT							24		//South
+
+#define BUFFER_SIZE							20
+#define MAX_PTR_OFFSET						3
+#define DATA_SIZE							1		//uint8_t
+
+
+static uint8_t buffer_transmission[BUFFER_SIZE];
+static uint8_t buffer_transmission_ptr_store = 0;
+static uint8_t buffer_transmission_ptr_send = 0;
+
+void store_buffer(int mapping_transmission){
+
+	//store in the transmission buffer informations to send
+	buffer_transmission[buffer_transmission_ptr_store] = mapping_transmission;
+
+	//Incr and reset buffer ptr
+	buffer_transmission_ptr_store++;
+	if(buffer_transmission_ptr_store == BUFFER_SIZE) buffer_transmission_ptr_store = 0;
 
 }
 
-void Transmission_mapping(uint8_t movement_state, bool opening_right, bool openig_front, bool opening_left,
-						bool opening_left, bool opening_left, bool fire_right, bool fire_front, bool fire_left)
+void send_orientation(uint16_t orientation){
+
+		 if(orientation == NORTH) store_buffer(FACING_UP);
+	else if(orientation == SOUTH) store_buffer(FACING_DOWN);
+	else if(orientation == EAST) store_buffer(FACING_RIGHT);
+	else if(orientation == WEST) store_buffer(FACING_LEFT);
+
+}
+
+void send_corridor(void){
+	store_buffer(CORRIDOR);
+}
+
+void send_moving_in_intersection(void){
+	store_buffer(MOVING_IN_INTERSECTION);
+}
+
+void send_crossing(bool opening_right, bool opening_front, bool opening_left){
+
+		  if(!opening_left && !opening_right && !opening_front) store_buffer(DEAD_END);
+	 else if(opening_left && !opening_right && !opening_front) store_buffer(CROSSING_L_LEFT);
+	 else if(!opening_left && opening_right && !opening_front) store_buffer(CROSSING_L_RIGHT);
+	 else if(opening_left && opening_right && !opening_front) store_buffer(CROSSING_T);
+	 else if(opening_left && !opening_right && opening_front) store_buffer(CROSSING_T_LEFT);
+	 else if(!opening_left && opening_right && opening_front) store_buffer(CROSSING_T_RIGHT);
+	 else if(opening_left && opening_right && opening_front) store_buffer(CROSSING_X);
+
+}
+
+void SendUint8ToComputer(uint8_t* data, uint16_t size)
 {
-	if(movement_state == MOVING) store_buffer(CORRIDOR);
-	else
-	{
-		if if if ...
-	}
-
-
+	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)"START", 5);
+	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)&size, sizeof(uint16_t));
+	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)data, size);
 }
+
 
 static THD_WORKING_AREA(waThdTransmissions, 256);
 static THD_FUNCTION(Transmissions, arg) {
@@ -82,33 +136,26 @@ static THD_FUNCTION(Transmissions, arg) {
 //    	}
 
 
-    	switch(get_movement_state()){
+    	//Transmission send
 
+    	//Check if there is something to send in the buffer
+    	if(buffer_transmission_ptr_send < buffer_transmission_ptr_store || (buffer_transmission_ptr_store < MAX_PTR_OFFSET && buffer_transmission_ptr_send > BUFFER_SIZE - MAX_PTR_OFFSET)){
 
-       	case STOP: 					break;
+			//Send to computer
+    		SendUint8ToComputer(buffer_transmission[buffer_transmission_ptr_send], DATA_SIZE);
 
-
-    	case MOVING: 				break;
-
-
-    	case REACHING_INTERSECTION: break;
-
-
-    	case ROTATING: 				break;
-
-
-    	case LEAVING_INTERSECTION:  break;
-
-    	case FIRE_FIGHTING:			break;
-
-    	default: break;
+			//Incr and reset buffer ptr
+			buffer_transmission_ptr_send++;
+			if(buffer_transmission_ptr_send == BUFFER_SIZE) buffer_transmission_ptr_send = 0;
     	}
 
-    	chThdSleepUntilWindowed(time, time + MS2ST(1000));
+
+
+    	chThdSleepUntilWindowed(time, time + MS2ST(300));
 
     }
 }
 
 void management_transmissions_start(void){
-	   chThdCreateStatic(waThdTransmissions, sizeof(waThdTransmissions), NORMALPRIO, Transmissions, NULL);
+	   chThdCreateStatic(waThdTransmissions, sizeof(waThdTransmissions), NORMALPRIO - 1, Transmissions, NULL);
 }
