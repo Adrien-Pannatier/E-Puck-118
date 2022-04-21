@@ -10,6 +10,7 @@
 #include "management_movement.h"
 #include "motors.h"
 #include "management_proximity.h"
+#include "management_transmissions.h"
 
 //provisoir pour debug
 #include "leds.h"
@@ -19,32 +20,27 @@
 #include "button.h"
 #include "selector.h"
 
-//Moving state
-#define STOP							0												//No movement
-#define MOVING							1												//Following a corridor
-#define REACHING_INTERSECTION			2												//Reaching the middle of an intersection
-#define ROTATING						3												//Choosing the next path and rotating in the intersection
-#define LEAVING_INTERSECTION			4												//Regaining the corridor
-#define FIRE_FIGHTING					5												//Taking actions against fire
 
 //Moving parameters
 #define CERTAINTY						3												//minimum occurrence of a measure to have a good confidence
+#define NULL_POS						0												//Reset position zero compteur moteur
 #define R_EPUCK							3.5												//[cm]
-#define MAZE_WIDTH						10												//[cm]
+#define MAZE_WIDTH						10.0											//[cm]
 #define NSTEP_ONE_TURN   				1000 											//number of step for 1 turn of the motor
-#define WHEEL_PERIMETER     			13 												//[cm]
-#define SPEED							6												//[cm/s]
+#define WHEEL_PERIMETER     			13.0 												//[cm]
+#define SPEED							6.0												//[cm/s]
 #define SPEED_STEP						(SPEED*NSTEP_ONE_TURN/WHEEL_PERIMETER)			//[step/s] ()
 #define ROTATIONAL_SPEED				280
-#define STEP_TO_REACH_THE_MIDDLE		280 //(MAZE_WIDTH/2*NSTEP_ONE_TURN/WHEEL_PERIMETER) 	//[step]
+#define STEP_TO_REACH_THE_MIDDLE		320											 	//[step]
 #define SPEED_NUL						0
 #define HISTORY_SIZE					40												//Size of navigation history buffer (store history of movements)
-#define RIGHT_360						1316											//[step]
-#define RIGHT_180						658												//[step]
-#define RIGHT_90						329												//[step]
-#define LEFT_360						(-RIGHT_360)									//[step]
-#define LEFT_180						(-RIGHT_180)									//[step]
-#define LEFT_90							(-RIGHT_90)										//[step]
+#define STEP_DEG						(1316.0/360.0)										//[step]
+#define RIGHT_360						360
+#define RIGHT_180						180												//[step]
+#define RIGHT_90						90												//[step]
+#define LEFT_360						-360											//[step]
+#define LEFT_180						-180											//[step]
+#define LEFT_90							-90												//[step]
 
 
 //PD parameters
@@ -58,8 +54,11 @@
 #define VL53L0X_OBSTRUCTED				50												//distance considered for obstructed [mm]
 
 static uint8_t movement_state = STOP;
+static int16_t orientation = 0;
 static bool fire_detected = false;
 static bool opening_right = false, opening_left = false, opening_front = false;
+static bool init_counter_reaching_intersection = false;
+static bool correction_trajectory_complete = false;
 static int16_t buffer_navigation_history[HISTORY_SIZE];
 static int8_t ptr_buffer_nav = 0;
 
@@ -137,12 +136,25 @@ bool get_fire_detected(void){
 	return(fire_detected);
 }
 
+uint8_t get_movement_state(void){
+	return movement_state;
+}
+
+uint8_t get_orientation(void){
+	return orientation;
+}
+
 
 //Movement related functions
 
 void stop_movement(void){
 	right_motor_set_speed(SPEED_NUL);
 	left_motor_set_speed(SPEED_NUL);
+}
+
+void reset_moving_in_intersection(void){
+	init_counter_reaching_intersection = false;
+	correction_trajectory_complete = NOT_COMPLETE;
 }
 
 void movement_regulation(void)
@@ -153,8 +165,7 @@ void movement_regulation(void)
 	int16_t correction = 0;
 
 	//PD
-	error = get_calibrated_prox(IR3) - get_calibrated_prox(IR6); // get_intensity(IR3) - get_intensity(IR6);//)* 5.0 + get_intensity(IR2) - get_intensity(IR5) + get_intensity(IR4) - get_intensity(IR7);
-	//error = get_distance_IR_mm(IR6) - get_distance_IR_mm(IR3);
+	error = get_calibrated_prox(IR3) - get_calibrated_prox(IR6);
 
 	//Calculation of trajectory correction
 	correction = Kp_tun * error + Kd_tun * (error - past_error);
@@ -171,6 +182,12 @@ void movement_regulation(void)
 	right_motor_set_speed(SPEED_STEP + correction);
 	left_motor_set_speed(SPEED_STEP - correction);
 
+	//Send movement for transmission every 1cm
+	if(left_motor_get_pos() >= (NSTEP_ONE_TURN / WHEEL_PERIMETER)){
+		send_corridor();
+		left_motor_set_pos(NULL_POS);
+	}
+
 	//Save history of movements
 	buffer_navigation_history[ptr_buffer_nav] = correction;
 	ptr_buffer_nav++;
@@ -182,9 +199,14 @@ void movement_regulation(void)
 bool check_for_openings(void){
 
 	//if opening detected
-	if(get_calibrated_prox(IR3) < NOISE_IR || get_calibrated_prox(IR6) < NOISE_IR)
+	if(get_calibrated_prox(IR2) < NOISE_IR || get_calibrated_prox(IR7) < NOISE_IR)
 	{
 		return COMPLETE;
+
+		set_led(LED1, 1);
+
+		//Init counter left motor for mapping
+		left_motor_set_pos(NULL_POS);
 	}
 	return NOT_COMPLETE;
 }
@@ -219,6 +241,13 @@ bool check_for_corridor(void){
 			if(certainty_counter >= CERTAINTY)
 				{
 					certainty_counter = 0;
+
+					//Reset counter left motor for mapping
+					left_motor_set_pos(NULL_POS);
+
+					//Reset parameters for intersection when avoided and not completed
+					reset_moving_in_intersection();
+
 					return COMPLETE;
 				}
 			//counter to avoid noise
@@ -251,20 +280,17 @@ bool trajectory_correction(void){
 
 bool moving_in_intersection(void){
 
-	static bool init_counter = false;
-	static bool correction_complete = false;
-
 	//init the counter only one time
-	if(!init_counter)
+	if(!init_counter_reaching_intersection)
 	{
 		right_motor_set_pos(0);
-		init_counter = true;
+		init_counter_reaching_intersection = true;
 	}
 
-	//init the correction of trajectory
-	if(!correction_complete)
+	//Init the correction of trajectory
+	if(!correction_trajectory_complete)
 	{
-			if(trajectory_correction() == COMPLETE) correction_complete = COMPLETE;
+			if(trajectory_correction() == COMPLETE) correction_trajectory_complete = COMPLETE;
 	}
 	else
 	{
@@ -272,32 +298,36 @@ bool moving_in_intersection(void){
 		left_motor_set_speed(SPEED_STEP);
 	}
 
+	//Send movement for transmission every 1cm
+		if(left_motor_get_pos() >= (NSTEP_ONE_TURN / WHEEL_PERIMETER)){
+			send_moving_in_intersection();
+			left_motor_set_pos(NULL_POS);
+		}
+
 	//stop when the middle is reached
 	if(right_motor_get_pos() >= STEP_TO_REACH_THE_MIDDLE)
 	{
 	    stop_movement();
-	    init_counter = false;
-	    correction_complete = NOT_COMPLETE;
-
-
-	    //DANS CHOOSE NEXT PATH
-//	    //store openings
-//		if(VL53L0X_get_dist_mm() >= VL53L0X_OPENING){
-//			opening_front = true;
-//			set_led(LED1, 1);
-//		}
-//		if(get_calibrated_prox(IR3) <= NOISE_IR){
-//			opening_right = true;
-//			set_led(LED3, 1);
-//		}
-//		if(get_calibrated_prox(IR6) <= NOISE_IR){
-//			opening_left = true;
-//			set_led(LED7, 1);
-//		}
+	    reset_moving_in_intersection();
 
 		return COMPLETE;
 	}
 	return NOT_COMPLETE;
+}
+
+//MAGIC NUMBERS
+
+void update_orientation(int rotation_angle){
+
+	orientation = orientation + rotation_angle;
+
+	//Modulo 360
+	if(orientation >= 360) orientation = orientation - 360;
+	else if(orientation < 0) orientation = orientation + 360;
+
+	//Send update to buffer
+	send_orientation(orientation);
+
 }
 
 bool rotate(int rotation_angle){
@@ -325,7 +355,7 @@ bool rotate(int rotation_angle){
 
 	//stop when desired angle is reached
 	right_motor_pos = right_motor_get_pos();
-	if(absolute_value_int32(right_motor_pos) >= absolute_value_int32(rotation_angle))
+	if(absolute_value_int32(right_motor_pos) >= absolute_value_int32(rotation_angle * STEP_DEG))
 	{
 		stop_movement();
 		init_counter = false;
@@ -343,19 +373,25 @@ bool choose_next_path(void){
 	if(check_openings == NOT_COMPLETE){
 
 		if(VL53L0X_get_dist_mm() >= VL53L0X_OPENING){
-		opening_front = true;
-		set_led(LED1, 1);
+			opening_front = true;
+//			set_led(LED1, 1);
 		}
 		if(get_calibrated_prox(IR3) <= NOISE_IR){
 			opening_right = true;
-			set_led(LED3, 1);
+//			set_led(LED3, 1);
 		}
 		if(get_calibrated_prox(IR6) <= NOISE_IR){
 			opening_left = true;
-			set_led(LED7, 1);
+//			set_led(LED7, 1);
 		}
+
+		//Send crossing for mapping
+		send_crossing(opening_right, opening_front, opening_left);
+
 		check_openings = COMPLETE;
 	}
+
+
 
 	//Follow the right wall, return complete when the rotation is done
 	if(opening_right)
@@ -394,6 +430,12 @@ bool join_corridor(void){
 	//go forward until a corridor is reached
 	right_motor_set_speed(SPEED_STEP);
 	left_motor_set_speed(SPEED_STEP);
+
+	//Send movement for transmission every 1cm
+	if(left_motor_get_pos() >= (NSTEP_ONE_TURN / WHEEL_PERIMETER)){
+		send_moving_in_intersection();
+		left_motor_set_pos(NULL_POS);
+	}
 
 	if(check_for_corridor() == COMPLETE){
 
@@ -461,8 +503,9 @@ static THD_FUNCTION(Movement, arg) {
     	default: movement_state = STOP; break;
     	}
 
-
-    	//if(get_selector() == 1) chprintf((BaseSequentialStream *)&SD3, "Thd time = %d\n\n\r", chVTGetSystemTime()-time);
+//    	chThdSleepMilliseconds(100);
+//
+//    	if(get_selector() == 0) chprintf((BaseSequentialStream *)&SD3, "Thd time = %d\n\n\r", chVTGetSystemTime()-time);
 
     	chThdSleepUntilWindowed(time, time + MS2ST(50));
 
@@ -471,45 +514,6 @@ static THD_FUNCTION(Movement, arg) {
 
 void management_movement_start(void){
 	   chThdCreateStatic(waThdMovement, sizeof(waThdMovement), NORMALPRIO, Movement, NULL);
-//	   chThdCreateStatic(waThdDisasterAreaDisplacement, sizeof(waThdDisasterAreaDisplacement), NORMALPRIO, DisasterAreaDisplacement, NULL);
-}
 
-////Thread displacement corridor
-//static THD_WORKING_AREA(waThdDisasterAreaDisplacement, 512);
-//static THD_FUNCTION(DisasterAreaDisplacement, arg) {
-//
-//    chRegSetThreadName(__FUNCTION__);
-//
-//    	//Variables PD
-//   		int32_t error = 0;
-//   		static int32_t past_error = 0;
-////   		static int32_t sum_errors = 0;
-//
-//   		int16_t correction = 0;
-//
-//    while(1){
-//
-//    	if(movement_state == MOVING)
-//    	{
-//
-//			//PD
-//			error = get_intensity(IR3) - get_intensity(IR6);//)* 5.0 + get_intensity(IR2) - get_intensity(IR5) + get_intensity(IR4) - get_intensity(IR7);
-//			//
-//			//			//anti windup
-//			//			if(absolute_value_int32(sum_errors) < ANTI_WINDUP)	sum_errors += error;
-//			//
-//			correction = Kp_tun * error + Kd_tun * (error - past_error);
-//			past_error = error;
-//
-//			//set motor speed
-//			right_motor_set_speed(SPEED_STEP + correction);
-//			left_motor_set_speed(SPEED_STEP - correction);
-//
-//			//check for openings
-//			check_for_openings();
-//    	}
-//    	chThdSleepMilliseconds(50);
-//
-//    }
-//}
+}
 
