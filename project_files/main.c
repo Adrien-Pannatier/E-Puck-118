@@ -4,6 +4,7 @@
 
 #include "ch.h"
 #include "hal.h"
+#include "spi_comm.h"
 #include "memory_protection.h"
 #include <usbcfg.h>
 #include <main.h>
@@ -16,7 +17,9 @@
 #include <audio/play_melody.h>
 #include <sensors/proximity.h>
 #include <added_melodies.h>
-#include "spi_comm.h"
+#include "chmtx.h"
+#include "light_gestion.h"
+#include "audio/audio_thread.h"
 #include "management_proximity.h"
 #include "management_movement.h"
 
@@ -29,8 +32,11 @@ int main(void)
     halInit();
     chSysInit();
     mpu_init();
-
+    LED_start();
+    messagebus_init(&bus, &bus_lock, &bus_condvar);
+    proximity_start();
     spi_comm_start();
+    dac_start();
     playMelodyStart();
 
     //start movement related thread

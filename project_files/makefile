@@ -13,6 +13,7 @@ CSRC += ./main.c \
 		./added_melodies.c\
 		./management_movement.c\
 		./management_proximity.c\
+		./light_gestion.c\
 
 
 #Header folders to include
