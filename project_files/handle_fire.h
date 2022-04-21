@@ -8,6 +8,8 @@
 #ifndef HANDLE_FIRE_H_
 #define HANDLE_FIRE_H_
 
+#include "management_movement.h"
+
  /**
  * @brief   activates the camera to check if a fire is present
  *
@@ -19,7 +21,6 @@ bool check_for_fire(void)
  * @brief Activate the following events:
  * 										- Start the air blower
  * 										- Activate the siren
- * 										- wiggle to better reach the flame
  */
 void deploy_antifire_measures(void);
 
@@ -27,7 +28,6 @@ void deploy_antifire_measures(void);
  * @brief Stops the following events:
  * 										- Stop the air blower
  * 										- deactivate the siren
- * 										- stop moving
  */
 void stop_antifire_measures(void);
 

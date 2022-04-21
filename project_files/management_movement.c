@@ -498,7 +498,8 @@ static THD_FUNCTION(Movement, arg) {
     	case LEAVING_INTERSECTION: if(join_corridor() == COMPLETE) movement_state = MOVING;
     							   if(check_for_dead_end() == COMPLETE) movement_state = ROTATING; break;
 
-    	case FIRE_FIGHTING: break;
+    	case FIRE_FIGHTING:		   //if (check_for_fire() == true)
+    							   break; //do wiggle
 
     	default: movement_state = STOP; break;
     	}
@@ -513,7 +514,10 @@ static THD_FUNCTION(Movement, arg) {
 }
 
 void management_movement_start(void){
-	   chThdCreateStatic(waThdMovement, sizeof(waThdMovement), NORMALPRIO, Movement, NULL);
+	 chThdCreateStatic(waThdMovement, sizeof(waThdMovement), NORMALPRIO, Movement, NULL);
+}
 
+uint8_t get_movement_state(void){
+	return movement_state;
 }
 

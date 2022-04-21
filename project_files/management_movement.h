@@ -23,5 +23,8 @@
 
 void management_movement_start(void);
 
+uint8_t get_movement_state(void);
+
+bool rotate(int rotation_angle);
 
 #endif /* MANAGEMENT_MOVEMENT_H_ */
