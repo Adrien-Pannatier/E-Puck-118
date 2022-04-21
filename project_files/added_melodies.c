@@ -80,6 +80,12 @@ static const uint16_t rocky_melody[] = {
 	NOTE_A4,
 };
 
+//PINPON melody
+static const uint16_t pinpon_melody[] = {
+	NOTE_A5, NOTE_B5,NOTE_A5, NOTE_B5,
+	NOTE_A5, NOTE_B5,NOTE_A5, NOTE_B5,
+};
+
 //ROCKY tempo
 static const float rocky_tempo[] = {
 	8,
@@ -100,11 +106,11 @@ static const float rocky_tempo[] = {
 	8, 16, 4, 16,
 	16/3,
 
-	3, 16, 16/3,
+	1.3, 16, 16/3,
 
-	3, 16, 16/3,
+	1.3, 16, 16/3,
 
-	3, 16, 16/3,
+	1.3, 16, 16/3,
 
 	1,
 
@@ -122,11 +128,11 @@ static const float rocky_tempo[] = {
 	16, 8, 16, 8,
 	16, 16/3,
 
-	3, 16, 16/3,
+	1.3, 16, 16/3,
 
-	3, 16, 16/3,
+	1.3, 16, 16/3,
 
-	3, 16, 16/3,
+	1.3, 16, 16/3,
 
 	1,
 
@@ -149,8 +155,10 @@ static const float rocky_tempo[] = {
 
 };
 
-
-
+static const float pinpon_tempo[] = {
+	1,1,1,1,
+	1,1,1,1,
+};
 
 static const melody_t added_melodies[NB_ADDED_SONGS] = {
   //ROCKY
@@ -158,6 +166,12 @@ static const melody_t added_melodies[NB_ADDED_SONGS] = {
     .notes = rocky_melody,
     .tempo = rocky_tempo,
     .length = sizeof(rocky_melody)/sizeof(uint16_t),
+  },
+  //PINPON
+  {
+    .notes = pinpon_melody,
+    .tempo = pinpon_tempo,
+    .length = sizeof(pinpon_melody)/sizeof(uint16_t),
   },
 };
 

@@ -14,6 +14,7 @@
 typedef enum{
 	//internal songs available
 	ROCKY = 0,
+	PINPON = 1,
 	NB_ADDED_SONGS,	//tell the number of internal songs
 }added_song_selection_t;
 
