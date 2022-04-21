@@ -8,6 +8,7 @@
 #include "ch.h"
 #include "hal.h"
 #include "leds.h"
+#include "move.h"
 
 static THD_WORKING_AREA(waThdLED, 128);
 static THD_FUNCTION(ThdLED, arg) {
@@ -19,7 +20,7 @@ static THD_FUNCTION(ThdLED, arg) {
 
     while (1) {
 
-    	if(get_selector() == 0)
+    	if(get_movement_state() == 0)
     	{
     		//LEDs OFF
 
