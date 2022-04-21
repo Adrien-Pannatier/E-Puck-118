@@ -169,7 +169,7 @@ static THD_FUNCTION(Transmissions, arg) {
     		data_out[0] = buffer_transmission[buffer_transmission_ptr_send];
     		SendUint8ToComputer(data_out, DATA_SIZE);
 
-    		chprintf((BaseSequentialStream *)&SD3, "Transmission = %.u \n\n\r", buffer_transmission[buffer_transmission_ptr_send]);
+    		//chprintf((BaseSequentialStream *)&SD3, "Transmission = %.u \n\n\r", buffer_transmission[buffer_transmission_ptr_send]);
 
 
 			//Incr and reset buffer ptr

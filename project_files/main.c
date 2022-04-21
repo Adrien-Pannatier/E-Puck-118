@@ -31,7 +31,7 @@ int main(void)
     halInit();
     chSysInit();
     mpu_init();
-    LED_start();
+   // LED_start();
     messagebus_init(&bus, &bus_lock, &bus_condvar);
     proximity_start();
     spi_comm_start();
