@@ -33,8 +33,6 @@ static THD_FUNCTION(ThdManagementProximity, arg) {
     chRegSetThreadName("ManagementProximityThd");
     (void)arg;
 
-    static bool calibrated = false;
-
     //Sensor clock init
 
     RCC->AHB1ENR    |= RCC_AHB1ENR_GPIOBEN;

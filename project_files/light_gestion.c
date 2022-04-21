@@ -8,7 +8,7 @@
 #include "ch.h"
 #include "hal.h"
 #include "leds.h"
-#include "move.h"
+#include "management_movement.h"
 
 static THD_WORKING_AREA(waThdLED, 128);
 static THD_FUNCTION(ThdLED, arg) {
@@ -20,44 +20,45 @@ static THD_FUNCTION(ThdLED, arg) {
 
     while (1) {
 
-    	if(get_movement_state() == 0)
+    	if(get_movement_state() == STOP)
     	{
     		//LEDs OFF
 
     		clear_leds();
-    		chThdYield();
+    		chThdSleepMilliseconds(300);
     	}
-    	else if(get_selector() == 1)
+    	else if(get_movement_state() == FIRE_FIGHTING)
        	{
+    		//Alarm rotation of red leds
 
-       		//Alarm rotation of red leds
+    		clear_leds();
+    		set_led(LED1, LED_ON);
+    		chThdSleepMilliseconds(ALAMRM_SPEED);
+    		set_rgb_led(LED2, RGB_RED);
+    		set_led(LED1, LED_OFF);
+    		chThdSleepMilliseconds(ALAMRM_SPEED);
+    		set_led(LED3, LED_ON);
+    		set_rgb_led(LED2, RGB_OFF);
+    		chThdSleepMilliseconds(ALAMRM_SPEED);
+    		set_rgb_led(LED4, RGB_RED);
+    		set_led(LED3, LED_OFF);
+    		chThdSleepMilliseconds(ALAMRM_SPEED);
+    		set_led(LED5, LED_ON);
+    		set_rgb_led(LED4, RGB_OFF);
+    		chThdSleepMilliseconds(ALAMRM_SPEED);
+    		set_rgb_led(LED6, RGB_RED);
+    		set_led(LED5, LED_OFF);
+    		chThdSleepMilliseconds(ALAMRM_SPEED);
+    		set_led(LED7, LED_ON);
+    		set_rgb_led(LED6, RGB_OFF);
+    		chThdSleepMilliseconds(ALAMRM_SPEED);
+    		set_rgb_led(LED8, RGB_RED);
+    		set_led(LED7, LED_OFF);
+    		chThdSleepMilliseconds(ALAMRM_SPEED);
 
-       		clear_leds();
-       		set_led(LED1, LED_ON);
-       		chThdSleepMilliseconds(ALAMRM_SPEED);
-       		set_rgb_led(LED2, RGB_RED);
-       		set_led(LED1, LED_OFF);
-       		chThdSleepMilliseconds(ALAMRM_SPEED);
-       		set_led(LED3, LED_ON);
-       		set_rgb_led(LED2, RGB_OFF);
-       		chThdSleepMilliseconds(ALAMRM_SPEED);
-       		set_rgb_led(LED4, RGB_RED);
-       		set_led(LED3, LED_OFF);
-       		chThdSleepMilliseconds(ALAMRM_SPEED);
-       		set_led(LED5, LED_ON);
-       		set_rgb_led(LED4, RGB_OFF);
-   			chThdSleepMilliseconds(ALAMRM_SPEED);
-   			set_rgb_led(LED6, RGB_RED);
-   			set_led(LED5, LED_OFF);
-   			chThdSleepMilliseconds(ALAMRM_SPEED);
-   			set_led(LED7, LED_ON);
-   			set_rgb_led(LED6, RGB_OFF);
-   			chThdSleepMilliseconds(ALAMRM_SPEED);
-   			set_rgb_led(LED8, RGB_RED);
-   			set_led(LED7, LED_OFF);
-   			chThdSleepMilliseconds(ALAMRM_SPEED);
+
        	}
-       	else //if(get_selector() == 2)
+       	else //if(get_movement_state() == other)
        	{
        		//Siren fire-fighter truck
 
@@ -74,10 +75,11 @@ static THD_FUNCTION(ThdLED, arg) {
    			set_rgb_led(LED8, RGB_BLUE);
 
    			chThdSleepMilliseconds(300);
-      	}
+
+     	}
     }
 }
 
 void LED_start(void){
-	chThdCreateStatic(waThdLED, sizeof(waThdLED), NORMALPRIO, ThdLED, NULL);
+	chThdCreateStatic(waThdLED, sizeof(waThdLED), NORMALPRIO -1, ThdLED, NULL);
 }

@@ -8,6 +8,9 @@
 #ifndef MANAGEMENT_MOVEMENT_H_
 #define MANAGEMENT_MOVEMENT_H_
 
+#include "ch.h"
+#include "hal.h"
+
 //Moving state
 #define STOP							0												//No movement
 #define MOVING							1												//Following a corridor
@@ -22,6 +25,9 @@
 #define WEST							270
 
 void management_movement_start(void);
+bool get_fire_detected(void);
+uint8_t get_movement_state(void);
+uint8_t get_orientation(void);
 
 
 #endif /* MANAGEMENT_MOVEMENT_H_ */
