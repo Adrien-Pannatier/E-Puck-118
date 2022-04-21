@@ -31,7 +31,7 @@
 #define SPEED							6.0												//[cm/s]
 #define SPEED_STEP						(SPEED*NSTEP_ONE_TURN/WHEEL_PERIMETER)			//[step/s] ()
 #define ROTATIONAL_SPEED				280
-#define STEP_TO_REACH_THE_MIDDLE		280 //(MAZE_WIDTH/2*NSTEP_ONE_TURN/WHEEL_PERIMETER) 	//[step]
+#define STEP_TO_REACH_THE_MIDDLE		320											 	//[step]
 #define SPEED_NUL						0
 #define HISTORY_SIZE					40												//Size of navigation history buffer (store history of movements)
 #define STEP_DEG						(1316.0/360.0)										//[step]
@@ -54,9 +54,11 @@
 #define VL53L0X_OBSTRUCTED				50												//distance considered for obstructed [mm]
 
 static uint8_t movement_state = STOP;
-static uint16_t orientation = 0;
+static int16_t orientation = 0;
 static bool fire_detected = false;
 static bool opening_right = false, opening_left = false, opening_front = false;
+static bool init_counter_reaching_intersection = false;
+static bool correction_trajectory_complete = false;
 static int16_t buffer_navigation_history[HISTORY_SIZE];
 static int8_t ptr_buffer_nav = 0;
 
@@ -150,6 +152,11 @@ void stop_movement(void){
 	left_motor_set_speed(SPEED_NUL);
 }
 
+void reset_moving_in_intersection(void){
+	init_counter_reaching_intersection = false;
+	correction_trajectory_complete = NOT_COMPLETE;
+}
+
 void movement_regulation(void)
 {
 	//Variables PD
@@ -192,9 +199,11 @@ void movement_regulation(void)
 bool check_for_openings(void){
 
 	//if opening detected
-	if(get_calibrated_prox(IR3) < NOISE_IR || get_calibrated_prox(IR6) < NOISE_IR)
+	if(get_calibrated_prox(IR2) < NOISE_IR || get_calibrated_prox(IR7) < NOISE_IR)
 	{
 		return COMPLETE;
+
+		set_led(LED1, 1);
 
 		//Init counter left motor for mapping
 		left_motor_set_pos(NULL_POS);
@@ -233,8 +242,11 @@ bool check_for_corridor(void){
 				{
 					certainty_counter = 0;
 
-					//Init counter left motor for mapping
+					//Reset counter left motor for mapping
 					left_motor_set_pos(NULL_POS);
+
+					//Reset parameters for intersection when avoided and not completed
+					reset_moving_in_intersection();
 
 					return COMPLETE;
 				}
@@ -268,20 +280,17 @@ bool trajectory_correction(void){
 
 bool moving_in_intersection(void){
 
-	static bool init_counter = false;
-	static bool correction_complete = false;
-
 	//init the counter only one time
-	if(!init_counter)
+	if(!init_counter_reaching_intersection)
 	{
 		right_motor_set_pos(0);
-		init_counter = true;
+		init_counter_reaching_intersection = true;
 	}
 
-	//init the correction of trajectory
-	if(!correction_complete)
+	//Init the correction of trajectory
+	if(!correction_trajectory_complete)
 	{
-			if(trajectory_correction() == COMPLETE) correction_complete = COMPLETE;
+			if(trajectory_correction() == COMPLETE) correction_trajectory_complete = COMPLETE;
 	}
 	else
 	{
@@ -299,8 +308,7 @@ bool moving_in_intersection(void){
 	if(right_motor_get_pos() >= STEP_TO_REACH_THE_MIDDLE)
 	{
 	    stop_movement();
-	    init_counter = false;
-	    correction_complete = NOT_COMPLETE;
+	    reset_moving_in_intersection();
 
 		return COMPLETE;
 	}
@@ -365,22 +373,25 @@ bool choose_next_path(void){
 	if(check_openings == NOT_COMPLETE){
 
 		if(VL53L0X_get_dist_mm() >= VL53L0X_OPENING){
-		opening_front = true;
-		set_led(LED1, 1);
+			opening_front = true;
+//			set_led(LED1, 1);
 		}
 		if(get_calibrated_prox(IR3) <= NOISE_IR){
 			opening_right = true;
-			set_led(LED3, 1);
+//			set_led(LED3, 1);
 		}
 		if(get_calibrated_prox(IR6) <= NOISE_IR){
 			opening_left = true;
-			set_led(LED7, 1);
+//			set_led(LED7, 1);
 		}
+
+		//Send crossing for mapping
+		send_crossing(opening_right, opening_front, opening_left);
+
 		check_openings = COMPLETE;
 	}
 
-	//Send crossing for mapping
-	send_crossing(opening_right, opening_front, opening_left);
+
 
 	//Follow the right wall, return complete when the rotation is done
 	if(opening_right)

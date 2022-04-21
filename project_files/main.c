@@ -5,9 +5,7 @@
 #include "ch.h"
 #include "hal.h"
 #include "memory_protection.h"
-#include <usbcfg.h>
 #include <main.h>
-#include <chprintf.h>
 #include <motors.h>
 #include <audio/microphone.h>
 #include <leds.h>
@@ -19,6 +17,7 @@
 #include "spi_comm.h"
 #include "management_proximity.h"
 #include "management_movement.h"
+#include "management_transmissions.h"
 
 messagebus_t bus;
 MUTEX_DECL(bus_lock);
@@ -34,6 +33,7 @@ int main(void)
     playMelodyStart();
 
     //start movement related thread
+    management_transmissions_start();
     management_proximity_start();
     management_movement_start();
 

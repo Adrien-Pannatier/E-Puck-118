@@ -29,8 +29,4 @@ void management_proximity_start(void);
 //return the distance of the IR sensor
 uint8_t get_distance_IR_mm(uint8_t IR_number);
 
-//COM
-static void serial_start(void);
-
-
 #endif /* PROXIMITY_H_ */

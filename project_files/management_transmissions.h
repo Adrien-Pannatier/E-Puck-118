@@ -8,6 +8,7 @@
 #ifndef MANAGEMENT_TRANSMISSIONS_H_
 #define MANAGEMENT_TRANSMISSIONS_H_
 
+void management_transmissions_start(void);
 void send_orientation(uint16_t orientation);
 void send_corridor(void);
 void send_moving_in_intersection(void);

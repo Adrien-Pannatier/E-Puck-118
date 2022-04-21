@@ -12,10 +12,9 @@
 #include "leds.h"
 #include <stm32f4xx.h>
 #include "sensors/proximity.h"
-#include <usbcfg.h>
-#include "chprintf.h"
 #include "sensors/VL53L0X/VL53L0X.h"
 #include "math.h"
+#include "chprintf.h"
 
 //interpolation for linearisation IR value
 #define MUL_VAL			1324.6
@@ -55,10 +54,6 @@ static THD_FUNCTION(ThdManagementProximity, arg) {
     {
     	table_lin_IR[i] = (uint8_t) (MUL_VAL*powf((i), POWER));
     }
-
-    //Realterm
-    usb_start();
-    serial_start();
 
     while(1){
 
@@ -102,17 +97,4 @@ uint8_t get_distance_IR_mm(uint8_t IR_number){
 	else return(0);
 }
 
-// COM
-
-static void serial_start(void)
-{
-	static SerialConfig ser_cfg = {
-	    115200,
-	    0,
-	    0,
-	    0,
-	};
-
-	sdStart(&SD3, &ser_cfg); // UART3.
-}
 

@@ -9,6 +9,8 @@
 #include "management_movement.h"
 #include "ch.h"
 #include "hal.h"
+#include "usbcfg.h"
+#include "chprintf.h"
 
 //Code used for transmission for mapping
 
@@ -58,14 +60,15 @@
 #define FACING_RIGHT						23		//East
 #define FACING_LEFT							24		//South
 
-#define BUFFER_SIZE							20
-#define MAX_PTR_OFFSET						3
+#define BUFFER_SIZE							40
+#define MAX_PTR_OFFSET						5
 #define DATA_SIZE							1		//uint8_t
 
 
-static uint8_t buffer_transmission[BUFFER_SIZE];
+static uint16_t buffer_transmission[BUFFER_SIZE];
 static uint8_t buffer_transmission_ptr_store = 0;
 static uint8_t buffer_transmission_ptr_send = 0;
+static uint16_t data_out[DATA_SIZE];
 
 void store_buffer(int mapping_transmission){
 
@@ -107,6 +110,18 @@ void send_crossing(bool opening_right, bool opening_front, bool opening_left){
 
 }
 
+static void serial_start(void)
+{
+	static SerialConfig ser_cfg = {
+	    115200,
+	    0,
+	    0,
+	    0,
+	};
+
+	sdStart(&SD3, &ser_cfg); // UART3.
+}
+
 void SendUint8ToComputer(uint8_t* data, uint16_t size)
 {
 	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)"START", 5);
@@ -120,7 +135,16 @@ static THD_FUNCTION(Transmissions, arg) {
 
     chRegSetThreadName(__FUNCTION__);
 
+
+    //Realterm
+    usb_start();
+    serial_start();
+
     systime_t time;
+
+    for(int i = 0; i < DATA_SIZE; i++){
+    	data_out[i] = 0;
+    }
 
     while(1){
 
@@ -142,7 +166,11 @@ static THD_FUNCTION(Transmissions, arg) {
     	if(buffer_transmission_ptr_send < buffer_transmission_ptr_store || (buffer_transmission_ptr_store < MAX_PTR_OFFSET && buffer_transmission_ptr_send > BUFFER_SIZE - MAX_PTR_OFFSET)){
 
 			//Send to computer
-    		SendUint8ToComputer(buffer_transmission[buffer_transmission_ptr_send], DATA_SIZE);
+    		data_out[0] = buffer_transmission[buffer_transmission_ptr_send];
+    		SendUint8ToComputer(data_out, DATA_SIZE);
+
+    		chprintf((BaseSequentialStream *)&SD3, "Transmission = %.u \n\n\r", buffer_transmission[buffer_transmission_ptr_send]);
+
 
 			//Incr and reset buffer ptr
 			buffer_transmission_ptr_send++;
@@ -151,7 +179,7 @@ static THD_FUNCTION(Transmissions, arg) {
 
 
 
-    	chThdSleepUntilWindowed(time, time + MS2ST(300));
+    	chThdSleepUntilWindowed(time, time + MS2ST(200));
 
     }
 }
