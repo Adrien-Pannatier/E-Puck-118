@@ -517,7 +517,3 @@ void management_movement_start(void){
 	 chThdCreateStatic(waThdMovement, sizeof(waThdMovement), NORMALPRIO, Movement, NULL);
 }
 
-uint8_t get_movement_state(void){
-	return movement_state;
-}
-

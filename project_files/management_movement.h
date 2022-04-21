@@ -8,6 +8,8 @@
 #ifndef MANAGEMENT_MOVEMENT_H_
 #define MANAGEMENT_MOVEMENT_H_
 
+#include "stdint.h"
+
 //Moving state
 #define STOP							0												//No movement
 #define MOVING							1												//Following a corridor
@@ -25,6 +27,6 @@ void management_movement_start(void);
 
 uint8_t get_movement_state(void);
 
-bool rotate(int rotation_angle);
+_Bool rotate(int rotation_angle);
 
 #endif /* MANAGEMENT_MOVEMENT_H_ */
