@@ -8,39 +8,33 @@
 
 #include <process_image.h>
 
+#include "leds.h"
 
-static float distance_cm = 0;
-static uint16_t line_position = IMAGE_BUFFER_SIZE/2;	//middle
+#define MASK_BLUE_L				0b00011111
+#define MASK_GREEN_L   			0b11100000
+#define MASK_GREEN_H			0b00000111
+#define MASK_RED_H				0b11111000
 
-//semaphore
-static BSEMAPHORE_DECL(image_ready_sem, TRUE);
+#define FIRE_THRESHOLD 			60				//Threshold for fire detection
 
-/*
- *  Returns the line's width extracted from the image buffer given
- *  Returns 0 if line not found
- */
-uint16_t extract_line_width(uint8_t *buffer){
 
-	uint16_t i = 0, begin = 0, end = 0, width = 0;
-	uint8_t stop = 0, wrong_line = 0, line_not_found = 0;
-	uint32_t mean = 0;
+static uint16_t line_position = 0;
+static bool image_processing = false;
+static bool image_capture = false;
 
-	static uint16_t last_width = PXTOCM/GOAL_DISTANCE;
+uint16_t detection_fire(uint8_t *buffer){
 
-	//performs an average
-	for(uint16_t i = 0 ; i < IMAGE_BUFFER_SIZE ; i++){
-		mean += buffer[i];
-	}
-	mean /= IMAGE_BUFFER_SIZE;
+	uint16_t i = 0, begin = 0, end = 0;
+	bool stop = false, wrong_line = false, line_not_found = false;
 
 	do{
-		wrong_line = 0;
+		wrong_line = false;
 		//search for a begin
-		while(stop == 0 && i < (IMAGE_BUFFER_SIZE - WIDTH_SLOPE))
-		{ 
+		while(stop == false && i < (IMAGE_BUFFER_SIZE - WIDTH_SLOPE))
+		{
 			//the slope must at least be WIDTH_SLOPE wide and is compared
 		    //to the mean of the image
-		    if(buffer[i] < mean && buffer[i+WIDTH_SLOPE] > mean)                  //INVERSE CAR ON CHERCHE UN PIC D'INTENSITE
+		    if(buffer[i] < FIRE_THRESHOLD && buffer[i+WIDTH_SLOPE] > FIRE_THRESHOLD)
 		    {
 		        begin = i;
 		        stop = 1;
@@ -50,11 +44,11 @@ uint16_t extract_line_width(uint8_t *buffer){
 		//if a begin was found, search for an end
 		if (i < (IMAGE_BUFFER_SIZE - WIDTH_SLOPE) && begin)
 		{
-		    stop = 0;
-		    
-		    while(stop == 0 && i < IMAGE_BUFFER_SIZE)
+		    stop = false;
+
+		    while(stop == false && i < IMAGE_BUFFER_SIZE)
 		    {
-		        if(buffer[i] < mean && buffer[i-WIDTH_SLOPE] > mean)			//INVERSE CAR ON CHERCHE UN PIC D'INTENSITE
+		        if(buffer[i] < FIRE_THRESHOLD && buffer[i-WIDTH_SLOPE] > FIRE_THRESHOLD)
 		        {
 		            end = i;
 		            stop = 1;
@@ -73,31 +67,28 @@ uint16_t extract_line_width(uint8_t *buffer){
 		}
 
 		//if a line too small has been detected, continues the search
-		if(!line_not_found && (end-begin) < MIN_LINE_WIDTH){
+		if(!line_not_found && (end-begin) < MIN_FIRE_WIDTH){
 			i = end;
 			begin = 0;
 			end = 0;
-			stop = 0;
-			wrong_line = 1;
+			stop = false;
+			wrong_line = true;
 		}
 	}while(wrong_line);
 
 	if(line_not_found){
 		begin = 0;
 		end = 0;
-		width = last_width;
+		line_position = NOT_FOUND;
 	}else{
-		last_width = width = (end - begin);
 		line_position = (begin + end)/2; //gives the line position.
 	}
 
-	//sets a maximum width or returns the measured width
-	if((PXTOCM/width) > MAX_DISTANCE){
-		return PXTOCM/MAX_DISTANCE;
-	}else{
-		return width;
-	}
+	return line_position;
 }
+
+//semaphore
+static BSEMAPHORE_DECL(image_ready_sem, TRUE);
 
 static THD_WORKING_AREA(waCaptureImage, 256);
 static THD_FUNCTION(CaptureImage, arg) {
@@ -106,7 +97,7 @@ static THD_FUNCTION(CaptureImage, arg) {
     (void)arg;
 
 	//Takes pixels 0 to IMAGE_BUFFER_SIZE of the line 10 + 11 (minimum 2 lines because reasons)
-	po8030_advanced_config(FORMAT_RGB565, 0, 10, IMAGE_BUFFER_SIZE, 2, SUBSAMPLING_X1, SUBSAMPLING_X1);
+	po8030_advanced_config(FORMAT_RGB565, 0, 200, IMAGE_BUFFER_SIZE, 2, SUBSAMPLING_X1, SUBSAMPLING_X1);
 	dcmi_enable_double_buffering();
 	dcmi_set_capture_mode(CAPTURE_ONE_SHOT);
 	dcmi_prepare();
@@ -128,49 +119,65 @@ static THD_FUNCTION(ProcessImage, arg) {
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
 
+
 	uint8_t *img_buff_ptr;
 	uint8_t image[IMAGE_BUFFER_SIZE] = {0};
-	uint16_t lineWidth = 0;
+	uint8_t red_value;
+	uint8_t green_value;
+	uint8_t blue_value;
+	bool un_sur_deux = false;
 
-	bool send_to_computer = true;
+	uint16_t line_position = NOT_FOUND;
 
     while(1){
-    	//waits until an image has been captured
-        chBSemWait(&image_ready_sem);
-		//gets the pointer to the array filled with the last image in RGB565    
-		img_buff_ptr = dcmi_get_last_image_ptr();
 
-		//Extracts only the red pixels
-		for(uint16_t i = 0 ; i < (2 * IMAGE_BUFFER_SIZE) ; i+=2){
-			//extracts first 5bits of the first byte
-			//takes nothing from the second byte
-			image[i/2] = (uint8_t)img_buff_ptr[i]&0xF8;
-		}
+    	if(image_processing == true)
+    	{
 
-		//search for a line in the image and gets its width in pixels
-		lineWidth = extract_line_width(image);
+			//waits until an image has been captured
+			chBSemWait(&image_ready_sem);
+			//gets the pointer to the array filled with the last image in RGB565
+			img_buff_ptr = dcmi_get_last_image_ptr();
 
-		//converts the width into a distance between the robot and the camera
-		if(lineWidth){
-			distance_cm = PXTOCM/lineWidth;
-		}
+			//reading red pixel values
+			un_sur_deux = !(un_sur_deux);
 
-		if(send_to_computer){
-			//sends to the computer the image
-			SendUint8ToComputer(image, IMAGE_BUFFER_SIZE);
-		}
-		//invert the bool
-		send_to_computer = !send_to_computer;
+			if(un_sur_deux)
+			{
+				for(int i = 0; i < IMAGE_BUFFER_SIZE; i += 1)
+				{
+					//blue + green + red
+					red_value = (img_buff_ptr[2*i] & MASK_RED_H)>>3;
+					blue_value = img_buff_ptr[2*i+1] & MASK_BLUE_L;
+					green_value  = (img_buff_ptr[2*i+1] & MASK_GREEN_L)>>5 | (img_buff_ptr[2*i] & MASK_GREEN_H)>>3;
+
+					image[i] = red_value + green_value + blue_value;
+				}
+			}
+
+			//Detection fire
+			line_position = detection_fire(image);
+
+			//chprintf((BaseSequentialStream *)&SD3, "Pos = %.u \n\n\r", line_position);
+			//SendUint8ToComputer(image, IMAGE_BUFFER_SIZE);
+    	}
     }
 }
 
-float get_distance_cm(void){
-	return distance_cm;
+void start_image_processing(void){
+	image_processing = true;
+	image_capture = true;
 }
 
-uint16_t get_peak_position(void){
+void stop_image_processing(void){
+	image_processing = false;
+	image_capture = false;
+}
+
+uint16_t get_line_position(void){
 	return line_position;
 }
+
 
 void process_image_start(void){
 	chThdCreateStatic(waProcessImage, sizeof(waProcessImage), NORMALPRIO, ProcessImage, NULL);

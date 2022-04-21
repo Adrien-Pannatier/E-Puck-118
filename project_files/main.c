@@ -68,20 +68,19 @@ int main(void)
     playMelodyStart();
 
     //starts the camera
+    //starts the serial communication
+    serial_start();
+    //start the USB communication
+    usb_start();
     dcmi_start();
    	po8030_start();
+   	process_image_start();
 
     // chThdCreateStatic(waThdFrontLed, sizeof(waThdFrontLed), NORMALPRIO, ThdFrontLed, NULL);
 
     /* Infinite loop. */
     while (1) {
-
-    	switch(get_selector())
-    	{
-    	case 0: playAddedMelody(ROCKY, 0,2);break;
-    	case 1: stopCurrentMelody();break;
-    	default: break;
-    	}
+    	chThdSleepMilliseconds(200);
 //    	playMelody(ML_SIMPLE_PLAY,ML_WAIT_AND_CHANGE,NULL);
 //    	waitMelodyHasFinished();
 
