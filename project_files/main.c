@@ -10,6 +10,7 @@
 #include <motors.h>
 #include <audio/microphone.h>
 #include <leds.h>
+
 #include <msgbus/messagebus.h>
 #include <audio/audio_thread.h>
 #include <audio/play_melody.h>
@@ -21,6 +22,9 @@
 #include "management_proximity.h"
 #include "management_movement.h"
 #include "management_transmissions.h"
+
+#include <process_image.h>
+#include <camera/po8030.h>
 
 messagebus_t bus;
 MUTEX_DECL(bus_lock);
@@ -37,7 +41,15 @@ int main(void)
     spi_comm_start();
     dac_start();
     playMelodyStart();
-
+    //starts the camera
+    //starts the serial communication
+    serial_start();
+    //start the USB communication
+    usb_start();
+    dcmi_start();
+    po8030_start();
+    process_image_start();
+    
     //start movement related thread
     management_transmissions_start();
     management_proximity_start();
@@ -47,9 +59,7 @@ int main(void)
 
     /* Infinite loop. */
     while (1) {
-
     	chThdSleepMilliseconds(500);
-
     }
 }
 
