@@ -16,6 +16,7 @@ CSRC += ./main.c \
 		./management_transmissions.c\
 		./light_gestion.c\
 
+		./process_image.c\
 
 #Header folders to include
 INCDIR += 
