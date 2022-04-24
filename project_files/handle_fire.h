@@ -13,7 +13,7 @@
  *
  * @return  True if fire / false if no fire
  */
-bool check_for_fire(void)
+_Bool check_for_fire(void);
 
 /**
  * @brief Activate the following events:

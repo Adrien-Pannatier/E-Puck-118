@@ -28,6 +28,6 @@ typedef enum{
  * @param option			Behavior to change the melody playing (see play_melody_option_t)
  *
  */
-void playAddedMelody(added_song_selection_t choice, play_melody_option_t option, uint16_t tempo_music);
+void playAddedMelody(added_song_selection_t choice, play_melody_option_t option);
 
 #endif /* ADDED_MELODIES_H_ */

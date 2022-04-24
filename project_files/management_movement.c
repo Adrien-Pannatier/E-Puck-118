@@ -11,6 +11,7 @@
 #include "motors.h"
 #include "management_proximity.h"
 #include "management_transmissions.h"
+#include "handle_fire.h"
 
 //provisoir pour debug
 #include "leds.h"
@@ -130,9 +131,9 @@ static THD_FUNCTION(Movement, arg) {
     	case ROTATING: 				analysing_intersection(); break;
 
 
-    	case LEAVING_INTERSECTION: join_corridor(); break;
+    	case LEAVING_INTERSECTION: 	join_corridor(); break;
 
-    	case FIRE_FIGHTING: break;
+    	case FIRE_FIGHTING: 		fighting_fire(); break;
 
     	default: movement_state = STOP; break;
     	}
@@ -463,12 +464,23 @@ void analysing_intersection(void){
 	//Turn in every opening to check for fire
 	if(opening_right){
 		rotate(RIGHT_90);
+		if(check_for_fire()){
+			//fire procedure
+			movement_state = FIRE_FIGHTING;
+		}
 	}
 	else if(opening_front){
-																											//add fire check
+		if(check_for_fire()){
+			//fire procedure
+			movement_state = FIRE_FIGHTING;
+		}
 	}
 	else if(opening_left){
 		rotate(LEFT_90);
+		if(check_for_fire()){
+			//fire procedure
+			movement_state = FIRE_FIGHTING;
+		}
 	}
 
 	//Changing movement state
@@ -516,8 +528,14 @@ void join_corridor(void){
 //			clear_leds();
 }
 
+void fighting_fire(void){
+	deploy_antifire_measures();
+	if(check_for_fire() == false){
+		stop_antifire_measures();
+	}
+}
+
 void management_movement_start(void){
 	   chThdCreateStatic(waThdMovement, sizeof(waThdMovement), NORMALPRIO, Movement, NULL);
-
 }
 

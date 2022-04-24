@@ -60,12 +60,10 @@ int main(void)
     spi_comm_start();
     dac_start();
     playMelodyStart();
-
     //starts the camera
     //starts the serial communication
     serial_start();
     //start the USB communication
-    usb_start();
     dcmi_start();
     po8030_start();
     process_image_start();

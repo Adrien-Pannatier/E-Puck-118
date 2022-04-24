@@ -175,7 +175,7 @@ static const melody_t added_melodies[NB_ADDED_SONGS] = {
   },
 };
 
-void playAddedMelody(added_song_selection_t choice, play_melody_option_t option, uint16_t tempo_music){
+void playAddedMelody(added_song_selection_t choice, play_melody_option_t option){
 	//if(sizeof(rocky_melody)/sizeof(uint16_t)==sizeof(rocky_tempo)/sizeof(float))set_led(LED1,1);
 	playMelody(EXTERNAL_SONG, option, &added_melodies[choice]);
 }
