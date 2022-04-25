@@ -322,7 +322,8 @@ bool corridor_found(void){
 
 	static uint8_t certainty_counter = 0;
 
-	if(get_calibrated_prox(IR3) >= NOISE_IR && get_calibrated_prox(IR6) >= NOISE_IR)
+	if(get_calibrated_prox(IR3) >= NOISE_IR && get_calibrated_prox(IR6) >= NOISE_IR &&
+			get_calibrated_prox(IR2) >= NOISE_IR && get_calibrated_prox(IR7) >= NOISE_IR)
 		{
 			if(certainty_counter >= CERTAINTY)
 			{
@@ -447,6 +448,9 @@ void rotate(int rotation_angle){
 
 void analysing_intersection(void){
 
+	//Store orientation before moving
+	orientation_before_check = orientation;
+
 	//Check for opening
 	if(VL53L0X_get_dist_mm() >= VL53L0X_OPENING){
 		opening_front = true;
@@ -464,21 +468,8 @@ void analysing_intersection(void){
 	//Send for mapping
 	send_crossing(opening_right, opening_front, opening_left);
 
-//	if(opening_right){
-//		rotate(RIGHT_90);
-//	}
-//	else if(opening_front){
-//	}
-//	else if(opening_left){
-//		rotate(LEFT_90);
-//	}
 	//Changing movement state
-	orientation_before_check = orientation;
 	movement_state = SEARCHING_FIRE;
-	//reset opening bool
-//	opening_front = false;
-//	opening_left = false;
-//	opening_right = false;
 }
 
 void join_corridor(void){
@@ -500,6 +491,8 @@ void join_corridor(void){
 
 		//Check for corridor
 		if(corridor_found()){
+
+			//reset opening bool
 			opening_front = false;
 			opening_left = false;
 			opening_right = false;
@@ -520,15 +513,16 @@ void join_corridor(void){
 //			clear_leds();
 }
 void searching_for_fire(void){
+
 	//checking front
-	if(opening_front){
-		if(check_for_fire()){
-			//fire procedure
-			opening_front = false;
-			movement_state = FIRE_FIGHTING;
-			return;
-		}
+	if(check_for_fire()){
+
+		//fire procedure
+		opening_front = false;
+		movement_state = FIRE_FIGHTING;
+		return;
 	}
+
 	if(opening_left){
 		rotate(LEFT_90);
 		if(check_for_fire()){
@@ -537,9 +531,10 @@ void searching_for_fire(void){
 			movement_state = FIRE_FIGHTING;
 			return;
 		}
-		else if(opening_right){
+		if(opening_right){
 			rotate(RIGHT_180);
 			if(check_for_fire()){
+
 				//fire procedure
 				opening_right = false;
 				movement_state = FIRE_FIGHTING;
@@ -547,15 +542,20 @@ void searching_for_fire(void){
 			}
 		}
 	}
-	if(opening_right){
+	else if(opening_right){
 		rotate(RIGHT_90);
 		if(check_for_fire()){
+
 			//fire procedure
 			opening_right = false;
 			movement_state = FIRE_FIGHTING;
 			return;
 		}
 	}
+
+	//If dead end
+	if(!opening_front) rotate(RIGHT_180);
+
 	movement_state = LEAVING_INTERSECTION;
 }
 

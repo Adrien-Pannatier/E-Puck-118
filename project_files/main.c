@@ -30,6 +30,20 @@ messagebus_t bus;
 MUTEX_DECL(bus_lock);
 CONDVAR_DECL(bus_condvar);
 
+//DEV
+static void serial_start(void)
+{
+	static SerialConfig ser_cfg = {
+	    115200,
+	    0,
+	    0,
+	    0,
+	};
+
+	sdStart(&SD3, &ser_cfg); // UART3.
+}
+
+
 int main(void)
 {
     halInit();
@@ -38,17 +52,20 @@ int main(void)
    // LED_start();
     messagebus_init(&bus, &bus_lock, &bus_condvar);
     proximity_start();
-    spi_comm_start();
     dac_start();
     playMelodyStart();
     //starts the camera
-    //start the USB communication
     dcmi_start();
     po8030_start();
     process_image_start();
 
     //start movement related thread
-    management_transmissions_start();
+//    management_transmissions_start();
+
+    //DEV
+    usb_start();
+    serial_start();
+
     management_proximity_start();
     management_movement_start();
 

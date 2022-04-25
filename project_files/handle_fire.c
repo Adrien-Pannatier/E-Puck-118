@@ -13,14 +13,15 @@
 bool check_for_fire(void){
 	//turns on the camera, check then turns of
 	//MUST WAIT FOR CAMERA TO READ uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu
+
 	start_image_processing();
-	chThdSleepMilliseconds(1000);
+	chThdSleepMilliseconds(500);
+	stop_image_processing();
+
 	if(get_line_position() == NOT_FOUND){
-		stop_image_processing();
 		return false;
 	}
 	else{
-		stop_image_processing();
 		return true;
 	}
 }
