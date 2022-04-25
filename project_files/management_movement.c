@@ -110,7 +110,15 @@ static THD_FUNCTION(Movement, arg) {
     	//PID_tuning();
 
     	//Selector control
-    	if(get_selector() == 0) movement_state = STOP;
+    	if(get_selector() == 0){
+
+        	chprintf((BaseSequentialStream *)&SD3, "Star image processing");
+
+        	if(check_for_fire()) set_front_led(1);
+        	else set_front_led(0);
+
+    		movement_state = STOP;
+    	}
     	else if(movement_state == STOP){
     		chThdSleepMilliseconds(500);
     		movement_state = LEAVING_INTERSECTION;
@@ -514,6 +522,8 @@ void join_corridor(void){
 }
 void searching_for_fire(void){
 
+	//remettre l'orientation de baseooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+
 	//checking front
 	if(check_for_fire()){
 
@@ -560,13 +570,13 @@ void searching_for_fire(void){
 }
 
 void fighting_fire(void){
+
 	deploy_antifire_measures();
 	chThdSleepMilliseconds(1000);
 	stop_antifire_measures();
-	if(check_for_fire() == false){
-		movement_state = SEARCHING_FIRE;
-		//remettre l'orientation de base
-	}
+
+	if(check_for_fire() == false) movement_state = SEARCHING_FIRE;
+
 }
 
 void management_movement_start(void){

@@ -54,6 +54,7 @@ int main(void)
     proximity_start();
     dac_start();
     playMelodyStart();
+
     //starts the camera
     dcmi_start();
     po8030_start();
@@ -68,8 +69,6 @@ int main(void)
 
     management_proximity_start();
     management_movement_start();
-
-    messagebus_init(&bus, &bus_lock, &bus_condvar);
 
     /* Infinite loop. */
     while (1) {

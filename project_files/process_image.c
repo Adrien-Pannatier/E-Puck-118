@@ -15,10 +15,11 @@
 #define MASK_GREEN_H			0b00000111
 #define MASK_RED_H				0b11111000
 
-#define FIRE_THRESHOLD 			60				//Threshold for fire detection
+#define FIRE_THRESHOLD 			50				//Threshold for fire detection
+#define CERTAINTY_COUNTER		6
 
 
-static uint16_t line_position = 0;
+static uint16_t line_position = NOT_FOUND;
 static bool image_processing = false;
 static bool image_capture = false;
 
@@ -127,7 +128,8 @@ static THD_FUNCTION(ProcessImage, arg) {
 	uint8_t blue_value;
 	bool un_sur_deux = false;
 
-	uint16_t line_position = NOT_FOUND;
+	uint16_t new_line_position = NOT_FOUND;
+	uint8_t counter = 0;
 
     while(1){
 
@@ -155,12 +157,26 @@ static THD_FUNCTION(ProcessImage, arg) {
 				}
 			}
 
-			//Detection fire
-			line_position = detection_fire(image);
+			//Detection fire with certainty counter to assure no fire
+			new_line_position = detection_fire(image);
 
-			//chprintf((BaseSequentialStream *)&SD3, "Pos = %.u \n\n\r", line_position);
+			if(new_line_position == NOT_FOUND){
+				if(counter >= CERTAINTY_COUNTER){
+					line_position = NOT_FOUND;
+				}
+				counter++;
+			}
+			else{
+				line_position = new_line_position;
+				counter = 0;
+			}
+
+
+			chprintf((BaseSequentialStream *)&SD3, "Pos = %.u \n\n\r", line_position);
 			//SendUint8ToComputer(image, IMAGE_BUFFER_SIZE);
     	}
+
+    	chThdSleepMilliseconds(50);
     }
 }
 
@@ -180,6 +196,6 @@ uint16_t get_line_position(void){
 
 
 void process_image_start(void){
-	chThdCreateStatic(waProcessImage, sizeof(waProcessImage), NORMALPRIO, ProcessImage, NULL);
-	chThdCreateStatic(waCaptureImage, sizeof(waCaptureImage), NORMALPRIO, CaptureImage, NULL);
+	chThdCreateStatic(waProcessImage, sizeof(waProcessImage), LOWPRIO, ProcessImage, NULL);
+	chThdCreateStatic(waCaptureImage, sizeof(waCaptureImage), LOWPRIO, CaptureImage, NULL);
 }
