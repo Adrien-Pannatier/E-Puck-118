@@ -61,6 +61,7 @@
 //Static variables accessible from outside
 static uint8_t movement_state = STOP;
 static int16_t orientation = 0;
+static int16_t orientation_before_check = 0;
 static bool fire_detected = false;
 static bool opening_right = false, opening_left = false, opening_front = false;
 
@@ -132,6 +133,8 @@ static THD_FUNCTION(Movement, arg) {
 
 
     	case LEAVING_INTERSECTION: 	join_corridor(); break;
+
+    	case SEARCHING_FIRE:		searching_for_fire(); break;
 
     	case FIRE_FIGHTING: 		fighting_fire(); break;
 
@@ -461,35 +464,21 @@ void analysing_intersection(void){
 	//Send for mapping
 	send_crossing(opening_right, opening_front, opening_left);
 
-	//Turn in every opening to check for fire
-	if(opening_right){
-		rotate(RIGHT_90);
-		if(check_for_fire()){
-			//fire procedure
-			movement_state = FIRE_FIGHTING;
-		}
-	}
-	else if(opening_front){
-		if(check_for_fire()){
-			//fire procedure
-			movement_state = FIRE_FIGHTING;
-		}
-	}
-	else if(opening_left){
-		rotate(LEFT_90);
-		if(check_for_fire()){
-			//fire procedure
-			movement_state = FIRE_FIGHTING;
-		}
-	}
-
+//	if(opening_right){
+//		rotate(RIGHT_90);
+//	}
+//	else if(opening_front){
+//	}
+//	else if(opening_left){
+//		rotate(LEFT_90);
+//	}
 	//Changing movement state
-	 movement_state = LEAVING_INTERSECTION;
-
+	orientation_before_check = orientation;
+	movement_state = SEARCHING_FIRE;
 	//reset opening bool
-	opening_front = false;
-	opening_left = false;
-	opening_right = false;
+//	opening_front = false;
+//	opening_left = false;
+//	opening_right = false;
 }
 
 void join_corridor(void){
@@ -511,6 +500,9 @@ void join_corridor(void){
 
 		//Check for corridor
 		if(corridor_found()){
+			opening_front = false;
+			opening_left = false;
+			opening_right = false;
 
 			movement_state = MOVING;
 
@@ -527,11 +519,53 @@ void join_corridor(void){
 	}
 //			clear_leds();
 }
+void searching_for_fire(void){
+	//checking front
+	if(opening_front){
+		if(check_for_fire()){
+			//fire procedure
+			opening_front = false;
+			movement_state = FIRE_FIGHTING;
+			return;
+		}
+	}
+	if(opening_left){
+		rotate(LEFT_90);
+		if(check_for_fire()){
+			//fire procedure
+			opening_left = false;
+			movement_state = FIRE_FIGHTING;
+			return;
+		}
+		else if(opening_right){
+			rotate(RIGHT_180);
+			if(check_for_fire()){
+				//fire procedure
+				opening_right = false;
+				movement_state = FIRE_FIGHTING;
+				return;
+			}
+		}
+	}
+	if(opening_right){
+		rotate(RIGHT_90);
+		if(check_for_fire()){
+			//fire procedure
+			opening_right = false;
+			movement_state = FIRE_FIGHTING;
+			return;
+		}
+	}
+	movement_state = LEAVING_INTERSECTION;
+}
 
 void fighting_fire(void){
 	deploy_antifire_measures();
+	chThdSleepMilliseconds(1000);
+	stop_antifire_measures();
 	if(check_for_fire() == false){
-		stop_antifire_measures();
+		movement_state = SEARCHING_FIRE;
+		//remettre l'orientation de base
 	}
 }
 

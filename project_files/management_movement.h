@@ -18,6 +18,7 @@
 #define ROTATING						3												//Choosing the next path and rotating in the intersection
 #define LEAVING_INTERSECTION			4												//Regaining the corridor
 #define FIRE_FIGHTING					5												//Taking actions against fire
+#define SEARCHING_FIRE					6												//searching if fire
 
 #define NORTH							0
 #define EAST							90
