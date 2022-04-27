@@ -8,6 +8,8 @@
 #include "added_melodies.h"
 #include "leds.h"
 
+//DEFINES
+#define SIREN_MAX_REPEAT				3
 //ROCKY melody
 static const uint16_t rocky_melody[] = {
 	NOTE_C4,
@@ -180,3 +182,9 @@ void playAddedMelody(added_song_selection_t choice, play_melody_option_t option)
 	playMelody(EXTERNAL_SONG, option, &added_melodies[choice]);
 }
 
+void playSiren(void){
+	for(int i=0;i<SIREN_MAX_REPEAT; i++){
+		playNote(NOTE_B4, 2000);
+		playNote(NOTE_A4, 2000);
+	}
+}

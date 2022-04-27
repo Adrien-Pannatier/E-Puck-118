@@ -30,4 +30,10 @@ typedef enum{
  */
 void playAddedMelody(added_song_selection_t choice, play_melody_option_t option);
 
+/**
+ * @brief Plays the siren for a brief moment
+ *
+ */
+void playSiren(void);
+
 #endif /* ADDED_MELODIES_H_ */
