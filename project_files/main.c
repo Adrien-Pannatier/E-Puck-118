@@ -22,6 +22,8 @@
 #include "management_proximity.h"
 #include "management_movement.h"
 #include "management_transmissions.h"
+#include "usbcfg.h"
+#include "spi_comm.h"
 
 #include <process_image.h>
 #include <camera/po8030.h>
@@ -46,28 +48,57 @@ static void serial_start(void)
 
 int main(void)
 {
+	//Systeme
     halInit();
     chSysInit();
     mpu_init();
-   // LED_start();
-    messagebus_init(&bus, &bus_lock, &bus_condvar);
-    proximity_start();
+
+    //LED
+    spi3_slave_lld_init();
+    spi_comm_start();
+    LED_start();
+
     dac_start();
     playMelodyStart();
 
-    //starts the camera
+    //Camera
     dcmi_start();
     po8030_start();
     process_image_start();
 
-    //start movement related thread
+    while(get_selector() != 0){
+    	//Wait for 0
+		set_rgb_led(LED2, RGB_RED);
+		set_rgb_led(LED4, RGB_RED);
+		set_rgb_led(LED6, RGB_RED);
+		set_rgb_led(LED8, RGB_RED);
+    }
+	set_rgb_led(LED2, RGB_YELLOW);
+	set_rgb_led(LED4, RGB_YELLOW);
+	set_rgb_led(LED6, RGB_YELLOW);
+	set_rgb_led(LED8, RGB_YELLOW);
+
+    chThdSleepSeconds(1);
+
+    //IR
+    messagebus_init(&bus, &bus_lock, &bus_condvar);
+    proximity_start();
+    management_proximity_start();
+
+	set_rgb_led(LED2, RGB_GREEN);
+	set_rgb_led(LED4, RGB_GREEN);
+	set_rgb_led(LED6, RGB_GREEN);
+	set_rgb_led(LED8, RGB_GREEN);
+	chThdSleepSeconds(1);
+
+    //Transmission
 //    management_transmissions_start();
 
     //DEV
     usb_start();
     serial_start();
 
-    management_proximity_start();
+    //Movement
     management_movement_start();
 
     /* Infinite loop. */

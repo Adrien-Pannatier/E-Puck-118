@@ -66,8 +66,8 @@ static bool fire_detected = false;
 static bool opening_right = false, opening_left = false, opening_front = false;
 
 //Store history of navigation
-static int16_t buffer_navigation_history[HISTORY_SIZE];
-static int8_t ptr_buffer_nav = 0;
+//static int16_t buffer_navigation_history[HISTORY_SIZE];
+//static int8_t ptr_buffer_nav = 0;
 
 //DEV
 //oooooooooooooooooooooooooooooooooooooooooooooooooo
@@ -89,6 +89,8 @@ void update_orientation(int rotation_angle);
 void rotate(int rotation_angle);
 void analysing_intersection(void);
 void join_corridor(void);
+void fighting_fire(void);
+void searching_for_fire(void);
 
 //Thd gestion movement of the robot
 
@@ -96,6 +98,7 @@ static THD_WORKING_AREA(waThdMovement, 512);
 static THD_FUNCTION(Movement, arg) {
 
     chRegSetThreadName(__FUNCTION__);
+    (void)arg;
 
     //Thread motors init
     motors_init();
@@ -110,12 +113,12 @@ static THD_FUNCTION(Movement, arg) {
     	//PID_tuning();
 
     	//Selector control
-    	if(get_selector() == 0){
+    	if(get_selector() != 2){
 
         	chprintf((BaseSequentialStream *)&SD3, "Star image processing");
 
-        	if(check_for_fire()) set_front_led(1);
-        	else set_front_led(0);
+        	if(check_for_fire()) deploy_antifire_measures();
+        	else stop_antifire_measures();
 
     		movement_state = STOP;
     	}

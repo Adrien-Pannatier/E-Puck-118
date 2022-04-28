@@ -156,8 +156,12 @@ static const float rocky_tempo[] = {
 };
 
 static const float pinpon_tempo[] = {
-	1,1,1,1,
-	1,1,1,1,
+		8,8,8,8,
+		8,8,8,8,
+
+
+//	1,1,1,1,
+//	1,1,1,1,
 };
 
 static const melody_t added_melodies[NB_ADDED_SONGS] = {

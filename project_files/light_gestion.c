@@ -10,13 +10,12 @@
 #include "leds.h"
 #include "management_movement.h"
 
+
 static THD_WORKING_AREA(waThdLED, 128);
 static THD_FUNCTION(ThdLED, arg) {
 
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
-
-    spi_comm_start();
 
     while (1) {
 

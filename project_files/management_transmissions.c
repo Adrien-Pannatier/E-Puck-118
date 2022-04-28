@@ -68,9 +68,9 @@
 static uint16_t buffer_transmission[BUFFER_SIZE];
 static uint8_t buffer_transmission_ptr_store = 0;
 static uint8_t buffer_transmission_ptr_send = 0;
-static uint16_t data_out[DATA_SIZE];
+static uint8_t data_out[DATA_SIZE];
 
-void store_buffer(int mapping_transmission){
+void store_buffer(uint8_t mapping_transmission){
 
 	//store in the transmission buffer informations to send
 	buffer_transmission[buffer_transmission_ptr_store] = mapping_transmission;
@@ -134,7 +134,7 @@ static THD_WORKING_AREA(waThdTransmissions, 256);
 static THD_FUNCTION(Transmissions, arg) {
 
     chRegSetThreadName(__FUNCTION__);
-
+    (void)arg;
 
     //Realterm
     usb_start();
