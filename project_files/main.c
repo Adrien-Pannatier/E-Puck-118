@@ -54,8 +54,7 @@ int main(void)
     mpu_init();
 
     //LED
-    spi3_slave_lld_init();
-    spi_comm_start();
+//    spi_comm_start();
     LED_start();
 
     dac_start();
@@ -66,18 +65,6 @@ int main(void)
     po8030_start();
     process_image_start();
 
-    while(get_selector() != 0){
-    	//Wait for 0
-		set_rgb_led(LED2, RGB_RED);
-		set_rgb_led(LED4, RGB_RED);
-		set_rgb_led(LED6, RGB_RED);
-		set_rgb_led(LED8, RGB_RED);
-    }
-	set_rgb_led(LED2, RGB_YELLOW);
-	set_rgb_led(LED4, RGB_YELLOW);
-	set_rgb_led(LED6, RGB_YELLOW);
-	set_rgb_led(LED8, RGB_YELLOW);
-
     chThdSleepSeconds(1);
 
     //IR
@@ -85,20 +72,15 @@ int main(void)
     proximity_start();
     management_proximity_start();
 
-	set_rgb_led(LED2, RGB_GREEN);
-	set_rgb_led(LED4, RGB_GREEN);
-	set_rgb_led(LED6, RGB_GREEN);
-	set_rgb_led(LED8, RGB_GREEN);
-	chThdSleepSeconds(1);
-
-    //Transmission
-//    management_transmissions_start();
-
     //DEV
     usb_start();
     serial_start();
 
+    //Transmission
+    //management_transmissions_start();
+
     //Movement
+    motors_init();
     management_movement_start();
 
     /* Infinite loop. */

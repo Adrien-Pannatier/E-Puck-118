@@ -65,19 +65,24 @@
 #define DATA_SIZE							1		//uint8_t
 
 
-static uint16_t buffer_transmission[BUFFER_SIZE];
-static uint8_t buffer_transmission_ptr_store = 0;
-static uint8_t buffer_transmission_ptr_send = 0;
-static uint8_t data_out[DATA_SIZE];
+//static uint16_t buffer_transmission[BUFFER_SIZE];
+//static uint8_t buffer_transmission_ptr_store = 0;
+//static uint8_t buffer_transmission_ptr_send = 0;
+static uint8_t data_out[DATA_SIZE] = {0};
+
+void SendUint8ToComputer(uint8_t* data, uint16_t size);
 
 void store_buffer(uint8_t mapping_transmission){
 
-	//store in the transmission buffer informations to send
-	buffer_transmission[buffer_transmission_ptr_store] = mapping_transmission;
+	data_out[0] = mapping_transmission;
+	SendUint8ToComputer(data_out, DATA_SIZE);
 
-	//Incr and reset buffer ptr
-	buffer_transmission_ptr_store++;
-	if(buffer_transmission_ptr_store == BUFFER_SIZE) buffer_transmission_ptr_store = 0;
+//	//store in the transmission buffer informations to send
+//	buffer_transmission[buffer_transmission_ptr_store] = mapping_transmission;
+//
+//	//Incr and reset buffer ptr
+//	buffer_transmission_ptr_store++;
+//	if(buffer_transmission_ptr_store == BUFFER_SIZE) buffer_transmission_ptr_store = 0;
 
 }
 
@@ -125,20 +130,16 @@ static void serial_start(void)
 void SendUint8ToComputer(uint8_t* data, uint16_t size)
 {
 	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)"START", 5);
-	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)&size, sizeof(uint16_t));
+//	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)&size, sizeof(uint16_t));
 	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)data, size);
 }
 
 
-static THD_WORKING_AREA(waThdTransmissions, 256);
+static THD_WORKING_AREA(waThdTransmissions, 500);
 static THD_FUNCTION(Transmissions, arg) {
 
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
-
-    //Realterm
-    usb_start();
-    serial_start();
 
     systime_t time;
 
@@ -163,19 +164,19 @@ static THD_FUNCTION(Transmissions, arg) {
     	//Transmission send
 
     	//Check if there is something to send in the buffer
-    	if(buffer_transmission_ptr_send < buffer_transmission_ptr_store || (buffer_transmission_ptr_store < MAX_PTR_OFFSET && buffer_transmission_ptr_send > BUFFER_SIZE - MAX_PTR_OFFSET)){
-
-			//Send to computer
-    		data_out[0] = buffer_transmission[buffer_transmission_ptr_send];
-    		SendUint8ToComputer(data_out, DATA_SIZE);
-
-    		//chprintf((BaseSequentialStream *)&SD3, "Transmission = %.u \n\n\r", buffer_transmission[buffer_transmission_ptr_send]);
-
-
-			//Incr and reset buffer ptr
-			buffer_transmission_ptr_send++;
-			if(buffer_transmission_ptr_send == BUFFER_SIZE) buffer_transmission_ptr_send = 0;
-    	}
+//    	if(buffer_transmission_ptr_send < buffer_transmission_ptr_store || (buffer_transmission_ptr_store < MAX_PTR_OFFSET && buffer_transmission_ptr_send > BUFFER_SIZE - MAX_PTR_OFFSET)){
+//
+//			//Send to computer
+//    		data_out[0] = buffer_transmission[buffer_transmission_ptr_send];
+//    		SendUint8ToComputer(data_out, DATA_SIZE);
+//
+//    		//chprintf((BaseSequentialStream *)&SD3, "START% \n\n\r", buffer_transmission[buffer_transmission_ptr_send]);
+//
+//
+//			//Incr and reset buffer ptr
+//			buffer_transmission_ptr_send++;
+//			if(buffer_transmission_ptr_send == BUFFER_SIZE) buffer_transmission_ptr_send = 0;
+//    	}
 
 
 

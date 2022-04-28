@@ -29,7 +29,7 @@
 #define MAZE_WIDTH						10.0											//[cm]
 #define NSTEP_ONE_TURN   				1000 											//number of step for 1 turn of the motor
 #define WHEEL_PERIMETER     			13.0 												//[cm]
-#define SPEED							6.0												//[cm/s]
+#define SPEED							4.0												//[cm/s]
 #define SPEED_STEP						(SPEED*NSTEP_ONE_TURN/WHEEL_PERIMETER)			//[step/s] ()
 #define ROTATIONAL_SPEED				280
 #define STEP_TO_REACH_THE_MIDDLE		320											 	//[step]
@@ -55,12 +55,12 @@
 
 
 //a changer
-#define VL53L0X_OPENING					100												//distance considered for opening [mm]
-#define VL53L0X_OBSTRUCTED				50												//distance considered for obstructed [mm]
+#define VL53L0X_OPENING					120												//distance considered for opening [mm]
+#define VL53L0X_OBSTRUCTED				70												//distance considered for obstructed [mm]
 
 //Static variables accessible from outside
 static uint8_t movement_state = STOP;
-static int16_t orientation = 0;
+static int16_t orientation = NORTH;
 static int16_t orientation_before_check = 0;
 static bool fire_detected = false;
 static bool opening_right = false, opening_left = false, opening_front = false;
@@ -101,7 +101,6 @@ static THD_FUNCTION(Movement, arg) {
     (void)arg;
 
     //Thread motors init
-    motors_init();
 //    systime_t time;
 
     while(1){
@@ -113,10 +112,8 @@ static THD_FUNCTION(Movement, arg) {
     	//PID_tuning();
 
     	//Selector control
-    	if(get_selector() != 2){
-
-        	chprintf((BaseSequentialStream *)&SD3, "Star image processing");
-
+    	if(get_selector() == 0){
+    		orientation = NORTH;
         	if(check_for_fire()) deploy_antifire_measures();
         	else stop_antifire_measures();
 
@@ -246,7 +243,7 @@ void stop_movement(void){
 bool opening_found(void){
 
 	//if opening detected
-	if(get_calibrated_prox(IR2) < NOISE_IR || get_calibrated_prox(IR7) < NOISE_IR)
+	if(get_calibrated_prox(IR3) < NOISE_IR || get_calibrated_prox(IR6) < NOISE_IR)
 	{
 		return true;
 	}
@@ -333,8 +330,8 @@ bool corridor_found(void){
 
 	static uint8_t certainty_counter = 0;
 
-	if(get_calibrated_prox(IR3) >= NOISE_IR && get_calibrated_prox(IR6) >= NOISE_IR &&
-			get_calibrated_prox(IR2) >= NOISE_IR && get_calibrated_prox(IR7) >= NOISE_IR)
+	if(get_calibrated_prox(IR3) >= NOISE_IR && get_calibrated_prox(IR6) >= NOISE_IR )
+//			 && get_calibrated_prox(IR2) >= NOISE_IR && get_calibrated_prox(IR7) >= NOISE_IR)
 		{
 			if(certainty_counter >= CERTAINTY)
 			{
@@ -427,7 +424,7 @@ void rotate(int rotation_angle){
 	int32_t right_motor_pos;
 
 	//Reset the counter
-	right_motor_set_pos(0);
+	right_motor_set_pos(NULL_POS);
 
 	//adjust rotation direction
 	if(rotation_angle > 0)
@@ -465,18 +462,18 @@ void analysing_intersection(void){
 	//Check for opening
 	if(VL53L0X_get_dist_mm() >= VL53L0X_OPENING){
 		opening_front = true;
-	//	set_led(LED1, 1);
+//		set_led(LED1, 1);
 	}
 	if(get_calibrated_prox(IR3) <= NOISE_IR){
 		opening_right = true;
-	//	set_led(LED3, 1);
+//		set_led(LED3, 1);
 	}
 	if(get_calibrated_prox(IR6) <= NOISE_IR){
 		opening_left = true;
-	//	set_led(LED7, 1);
+//		set_led(LED7, 1);
 	}
 
-	//Send for mapping
+//	Send for mapping
 	send_crossing(opening_right, opening_front, opening_left);
 
 	//Changing movement state
@@ -523,6 +520,7 @@ void join_corridor(void){
 	}
 //			clear_leds();
 }
+
 void searching_for_fire(void){
 
 	//remettre l'orientation de baseooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
@@ -565,9 +563,8 @@ void searching_for_fire(void){
 			return;
 		}
 	}
-
 	//If dead end
-	if(!opening_front) rotate(RIGHT_180);
+	else if(!opening_front) rotate(RIGHT_180);
 
 	movement_state = LEAVING_INTERSECTION;
 }

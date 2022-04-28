@@ -172,7 +172,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 			}
 
 
-			chprintf((BaseSequentialStream *)&SD3, "Pos = %.u \n\n\r", line_position);
+//			chprintf((BaseSequentialStream *)&SD3, "Pos = %.u \n\n\r", line_position);
 			//SendUint8ToComputer(image, IMAGE_BUFFER_SIZE);
     	}
 
