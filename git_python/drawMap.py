@@ -34,13 +34,13 @@ n = 640
 #maximum value for an uint8
 max_value = 255
 #dimensions of the map in cm
-max_X = 100
-max_Y = 100
+max_X = 200
+max_Y = 200
 #creation of the map matrix
 map_matrix = np.zeros((max_Y,max_X))
 
 #colormap
-colormap = matplotlib.colors.ListedColormap(['white','#c1c0bf', 'black', '#fe9200', '#0d48b1','red','yellow']) #in order: void,ground,walls,fire,e-pouck ext, e-pouck int, arrow
+colormap = matplotlib.colors.ListedColormap(['white','#c1c0bf', 'black', '#fe9200', 'red','red','yellow']) #in order: void,ground,walls,fire,e-pouck ext, e-pouck int, arrow
 bounds = [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5]
 perso_norm = matplotlib.colors.BoundaryNorm(bounds, colormap.N)
 
@@ -75,8 +75,8 @@ orientation = FACING_UP
 
 #EPUCK POSITION
 #starting point
-start_X = 50
-start_Y = 90
+start_X = 100
+start_Y = 190
 
 posR_Y = 50
 posR_X = 90
@@ -341,9 +341,9 @@ def update_plot_elements(data):
     global posR_X
     global posR_Y
     global orientation
-    print("posR_X: " +str(posR_X))
-    print("posR_Y: " +str(posR_Y))
-    print("orientation" +str(orientation))
+    #print("posR_X: " +str(posR_X))
+    #print("posR_Y: " +str(posR_Y))
+    #print("orientation" +str(orientation))
     if(data == FACING_UP or data == FACING_DOWN or data == FACING_RIGHT or data == FACING_LEFT):
         #global orientation 
         orientation = data
@@ -430,7 +430,7 @@ def readUint8Serial(port):
         c1 = port.read(1)
         #timeout condition
         if(c1 == b''):
-            print('Timout...')
+            print('Timout..')
             return [];
 
         if(state == 0):
@@ -469,30 +469,34 @@ def readUint8Serial(port):
     #print("start")
     #reads the size
     #converts as short int in little endian the two bytes read
-    size = struct.unpack('<h',port.read(2)) 
+    #size = struct.unpack('<h',port.read(2)) 
     #removes the second element which is void
-    size = size[0]  
-   # print("size")
-   # print(size)
+    #size = size[0]  
+    #print("size")
+    #print(size)
     #reads the data
-    rcv_buffer = port.read(size)
+    rcv_buffer = port.read(2)
     data_read = 0
-
+    print(rcv_buffer)
+    
     #if we receive the good amount of data, we convert them in uint8
-    if(len(rcv_buffer) == size):
-       # print("in if")
-        data_read = rcv_buffer[0]
+    #if(len(rcv_buffer) == 2):
+        #print("in if")
+        #data_read = rcv_buffer[0]
         #print(rcv_buffer[0])
     #    i = 0
      #   while(i < size):
       #      data_tab.append(struct.unpack_from('<I',rcv_buffer, i))
        #     i = i+1
 
-        print('received !')
-        return data_read
-    else:
-        print('Timout...')
-        return []
+       # print('received !')
+       # return data_read
+    #else:
+        #print('Timout...')
+        #return []
+    data_read = rcv_buffer[0]
+    print('received !')
+    return data_read    
 
 
 #thread used to control the communication part
@@ -518,12 +522,12 @@ class serial_thread(Thread):
         while(self.alive):
 
             if(self.contReceive):
-                print("recoit")
+                #print("recoit")
                 update_map_plot(self.port)
             else:
                 #flush the serial
                 #clear_map()
-                print("sleep")
+                #print("sleep")
                 self.port.read(self.port.inWaiting())
                 time.sleep(0.1)
             #refresh_map()
