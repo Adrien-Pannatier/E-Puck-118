@@ -61,7 +61,7 @@
 //Static variables accessible from outside
 static uint8_t movement_state = STOP;
 static int16_t orientation = NORTH;
-static int16_t orientation_before_check = 0;
+static int16_t orientation_before_check = NULL_POS;
 static bool fire_detected = false;
 static bool opening_right = false, opening_left = false, opening_front = false;
 
@@ -91,6 +91,7 @@ void analysing_intersection(void);
 void join_corridor(void);
 void fighting_fire(void);
 void searching_for_fire(void);
+void reseting_orientation(void);
 
 //Thd gestion movement of the robot
 
@@ -525,6 +526,7 @@ void searching_for_fire(void){
 
 	//remettre l'orientation de baseooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
+
 	//checking front
 	if(check_for_fire()){
 
@@ -577,6 +579,43 @@ void fighting_fire(void){
 
 	if(check_for_fire() == false) movement_state = SEARCHING_FIRE;
 
+}
+
+void reseting_orientation(void){
+
+	//NORTH = 0, EAST = 90, SOUth = 180, WEST = 270
+	switch(orientation){
+		case NORTH: 	switch(orientation_before_check){
+							case	NORTH: 	break;
+							case	EAST:	rotate(RIGHT_90); break;
+							case	SOUTH:	rotate(LEFT_180); break;
+							case	WEST: 	rotate(LEFT_90); break;
+							default		:	break;
+		}break;
+		case EAST: 		switch(orientation_before_check){
+							case	NORTH: 	rotate(LEFT_90); break;
+							case	EAST:	break;
+							case	SOUTH:	rotate(RIGHT_90); break;
+							case	WEST: 	rotate(RIGHT_180); break;
+							default		:	break;
+		}break;
+		case SOUTH: 	switch(orientation_before_check){
+							case	NORTH: 	rotate(LEFT_180); break;
+							case	EAST:	rotate(LEFT_90); break;
+							case	SOUTH:	break;
+							case	WEST: 	rotate(RIGHT_90); break;
+							default		:	break;
+		}break;
+		case WEST: 		switch(orientation_before_check){
+							case	NORTH: 	rotate(RIGHT_90); break;
+							case	EAST:	rotate(RIGHT_180); break;
+							case	SOUTH:	rotate(LEFT_90); break;
+							case	WEST: 	break;
+							default		:	break;
+		}break;
+		default: 		break;
+	}
+	orientation_before_check = NULL_POS;
 }
 
 void management_movement_start(void){
