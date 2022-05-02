@@ -115,8 +115,8 @@ static THD_FUNCTION(Movement, arg) {
     	//Selector control
     	if(get_selector() == 0){
     		orientation = NORTH;
-        	if(check_for_fire()) deploy_antifire_measures();
-        	else stop_antifire_measures();
+        	//if(check_for_fire()) deploy_antifire_measures();
+        	//else stop_antifire_measures();
 
     		movement_state = STOP;
     	}
@@ -147,7 +147,7 @@ static THD_FUNCTION(Movement, arg) {
 
     	case FIRE_FIGHTING: 		fighting_fire(); break;
 
-    	default: movement_state = STOP; break;
+    	default: 					movement_state = STOP; break;
     	}
 //
 //    	if(get_selector() == 0) chprintf((BaseSequentialStream *)&SD3, "Thd time = %d\n\n\r", chVTGetSystemTime()-time);
