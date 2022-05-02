@@ -61,9 +61,9 @@
 //Static variables accessible from outside
 static uint8_t movement_state = STOP;
 static int16_t orientation = NORTH;
-static int16_t orientation_before_check = NULL_POS;
+static int16_t orientation_before_check = NORTH;
 static bool fire_detected = false;
-static bool opening_right = false, opening_left = false, opening_front = false;
+static bool opening_right = false, opening_left = false, opening_front = true;
 
 //Store history of navigation
 //static int16_t buffer_navigation_history[HISTORY_SIZE];
@@ -89,6 +89,7 @@ void update_orientation(int rotation_angle);
 void rotate(int rotation_angle);
 void analysing_intersection(void);
 void join_corridor(void);
+void turn_towards_path(void);
 void fighting_fire(void);
 void searching_for_fire(void);
 void reseting_orientation(void);
@@ -115,6 +116,9 @@ static THD_FUNCTION(Movement, arg) {
     	//Selector control
     	if(get_selector() == 0){
     		orientation = NORTH;
+    		opening_right = false;
+    		opening_left = false;
+    		opening_front = true;
         	//if(check_for_fire()) deploy_antifire_measures();
         	//else stop_antifire_measures();
 
@@ -483,6 +487,13 @@ void analysing_intersection(void){
 
 void join_corridor(void){
 
+	//take the right path
+	turn_towards_path();
+	//reset opening bool
+	opening_front = false;
+	opening_left = false;
+	opening_right = false;
+
 	//go forward until a corridor is reached
 	right_motor_set_speed(SPEED_STEP);
 	left_motor_set_speed(SPEED_STEP);
@@ -501,11 +512,6 @@ void join_corridor(void){
 		//Check for corridor
 		if(corridor_found()){
 
-			//reset opening bool
-			opening_front = false;
-			opening_left = false;
-			opening_right = false;
-
 			movement_state = MOVING;
 
 			break;
@@ -520,6 +526,13 @@ void join_corridor(void){
 		}
 	}
 //			clear_leds();
+}
+
+void turn_towards_path(void){
+	if(opening_right)			rotate(RIGHT_90);
+	else if (opening_front)		return;
+	else if (opening_left) 		rotate(LEFT_90);
+	else if (!opening_front && !opening_right && !opening_left) rotate(LEFT_180);
 }
 
 void searching_for_fire(void){
@@ -566,7 +579,10 @@ void searching_for_fire(void){
 		}
 	}
 	//If dead end
-	else if(!opening_front) rotate(RIGHT_180);
+	//else if(!opening_front) rotate(RIGHT_180);
+
+	//orientation reset after firecheck
+	reseting_orientation();
 
 	movement_state = LEAVING_INTERSECTION;
 }

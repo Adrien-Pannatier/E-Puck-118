@@ -57,6 +57,24 @@ static THD_FUNCTION(ThdLED, arg) {
 
 
        	}
+    	else if(get_movement_state() == SEARCHING_FIRE)
+       	{
+    		//Alarm rotation of red leds
+
+    		clear_leds();
+    		set_led(LED3, LED_OFF);
+    		set_led(LED7, LED_OFF);
+    		set_led(LED1, LED_ON);
+    		set_led(LED5, LED_ON);
+    		chThdSleepMilliseconds(ALAMRM_SPEED);
+    		set_led(LED1, LED_OFF);
+    		set_led(LED5, LED_OFF);
+       		set_led(LED3, LED_ON);
+    		set_led(LED7, LED_ON);
+    		chThdSleepMilliseconds(ALAMRM_SPEED);
+
+
+       	}
        	else //if(get_movement_state() == other)
        	{
        		//Siren fire-fighter truck
