@@ -60,6 +60,8 @@ L_RIGHT_CROSS = 16
 
 X_CROSS = 17
 
+DEAD_END = 18
+
 #ORIENTATIONS
 FACING_UP = 21
 FACING_DOWN = 22
@@ -256,18 +258,20 @@ def add_L_down_right_cross():
     map_matrix[(posR_Y+6),(posR_X+6):(posR_X+11)] = 3  
     map_matrix[(posR_Y-6):(posR_Y+11),(posR_X-6)] = 3
     map_matrix[(posR_Y+6):(posR_Y+11),(posR_X+6)] = 3
+
 def add_L_up_left_cross():
-    global map_matrix
-    map_matrix[(posR_Y+6),(posR_X-6):(posR_X+11)] = 3
-    map_matrix[(posR_Y-6),(posR_X+6):(posR_X+11)] = 3  
-    map_matrix[(posR_Y-10):(posR_Y-5),(posR_X+6)] = 3
-    map_matrix[(posR_Y-10):(posR_Y+7),(posR_X-6)] = 3
-def add_L_up_right_cross():
     global map_matrix
     map_matrix[(posR_Y+6),(posR_X-10):(posR_X+7)] = 3
     map_matrix[(posR_Y-6),(posR_X-10):(posR_X-5)] = 3   
     map_matrix[(posR_Y-10):(posR_Y+7),(posR_X+6)] = 3
     map_matrix[(posR_Y-10):(posR_Y-5),(posR_X-6)] = 3
+
+def add_L_up_right_cross():
+    global map_matrix
+    map_matrix[(posR_Y+6),(posR_X-6):(posR_X+11)] = 3
+    map_matrix[(posR_Y-6),(posR_X+6):(posR_X+11)] = 3  
+    map_matrix[(posR_Y-10):(posR_Y-5),(posR_X+6)] = 3
+    map_matrix[(posR_Y-10):(posR_Y+7),(posR_X-6)] = 3
     
 def add_X_cross():
     global map_matrix
@@ -279,6 +283,28 @@ def add_X_cross():
     map_matrix[(posR_Y-10):(posR_Y-5),(posR_X+6)] = 3
     map_matrix[(posR_Y-6),(posR_X-10):(posR_X-5)] = 3  
     map_matrix[(posR_Y-10):(posR_Y-5),(posR_X-6)] = 3
+    
+def add_dead_end_up():
+    global map_matrix
+    map_matrix[(posR_Y-6),(posR_X-6):(posR_X+7)] = 3
+    map_matrix[(posR_Y-6):(posR_Y+1),(posR_X-6)] = 3
+    map_matrix[(posR_Y-6):(posR_Y+1),(posR_X+6)] = 3
+def add_dead_end_down():
+    global map_matrix
+    map_matrix[(posR_Y+6),(posR_X-6):(posR_X+7)] = 3
+    map_matrix[(posR_Y):(posR_Y+7),(posR_X-6)] = 3
+    map_matrix[(posR_Y):(posR_Y+7),(posR_X+6)] = 3
+def add_dead_end_right():
+    global map_matrix
+    map_matrix[(posR_Y-6):(posR_Y+7),(posR_X+6)] = 3
+    map_matrix[(posR_Y-6),(posR_X):(posR_X+7)] = 3
+    map_matrix[(posR_Y+6),(posR_X):(posR_X+7)] = 3
+def add_dead_end_left(): 
+    global map_matrix
+    map_matrix[(posR_Y-6):(posR_Y+7),(posR_X-6)] = 3
+    map_matrix[(posR_Y-6),(posR_X-6):(posR_X+1)] = 3
+    map_matrix[(posR_Y+6),(posR_X-6):(posR_X+1)] = 3
+
     
 def draw_crossing(data):
 # || data == T_CROSS_UR || data == T_CROSS_UL || data == L_LEFT_CROSS || data == L_RIGHT_CROSS || data == X_CROSS
@@ -335,6 +361,16 @@ def draw_crossing(data):
     elif(data == X_CROSS):
         add_X_cross()   
     
+    elif(data == DEAD_END):
+        if(orientation == FACING_UP):
+            add_dead_end_up()          
+        elif(orientation == FACING_DOWN):
+            add_dead_end_down() 
+        elif(orientation == FACING_RIGHT):
+            add_dead_end_right() 
+        elif(orientation == FACING_LEFT):
+            add_dead_end_left() 
+    
 #------------------------------------------------------------------------------------------------    
 def update_plot_elements(data):
     #update orientation if needed
@@ -351,12 +387,16 @@ def update_plot_elements(data):
 
     elif(data == MOVING_IN_INTERSECTION):
         update_epuck_position(GO)
+        update_epuck_position(GO)
         #print("g")
     elif(data == CORRIDOR):
         update_epuck_position(GO)
         add_walls()
+        update_epuck_position(GO)
+        add_walls()
 
-    elif(data == T_CROSS_RL or data == T_CROSS_UR or data == T_CROSS_UL or data == L_LEFT_CROSS or data == L_RIGHT_CROSS or data == X_CROSS):
+    elif(data == T_CROSS_RL or data == T_CROSS_UR or data == T_CROSS_UL or data == L_LEFT_CROSS or data == L_RIGHT_CROSS or data == X_CROSS or          data == DEAD_END):
+        print("CROSSING")
         draw_crossing(data)
 
     elif(data == D_FIRE):
@@ -379,8 +419,8 @@ def clear_map():
 
     #WALLS
     #start walls
-    map_matrix[start_Y:(start_Y+7),start_X-6] = 3
-    map_matrix[start_Y:(start_Y+7),start_X+6] = 3
+    #map_matrix[start_Y:(start_Y+7),start_X-6] = 3
+    #map_matrix[start_Y:(start_Y+7),start_X+6] = 3
     map_matrix[start_Y+6,(start_X-6):(start_X+7)] = 3
     
     #position offset of the e-puck (in the bottom middle)
@@ -577,6 +617,7 @@ reader_thd.start()
 fig, ax = plt.subplots(num=None, figsize=(10, 9), dpi=80)
 fig.canvas.set_window_title('Map of the house')
 plt.subplots_adjust(left=0.1, bottom=0.25)
+fig.patch.set_facecolor('cornflowerblue')
 fig.canvas.mpl_connect('close_event', handle_close) #to detect when the window is closed and if we do a ctrl-c
 
 #cam graph config with initial plot
@@ -599,9 +640,9 @@ def handle_clear(val):
 
 #positions of the buttons, sliders and radio buttons
 colorAx             = 'lightgoldenrodyellow'
-receiveAx           = plt.axes([0.4, 0.025, 0.1, 0.04])
-stopAx              = plt.axes([0.5, 0.025, 0.1, 0.04])
-clearAx             = plt.axes([0.6, 0.025, 0.1, 0.04])
+receiveAx           = plt.axes([0.333, 0.025, 0.1, 0.04])
+stopAx              = plt.axes([0.44, 0.025, 0.1, 0.04])
+clearAx             = plt.axes([0.555, 0.025, 0.1, 0.04])
 
 #config of the buttons, sliders and radio buttons
 receiveButton           = Button(receiveAx, 'Start reading', color=colorAx, hovercolor='0.975')
