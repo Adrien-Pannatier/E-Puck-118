@@ -3,6 +3,8 @@
  *
  *  Created on: 21 avr. 2022
  *      Author: AdrienPannatier
+ *
+ * Functions to control the alarm and the air blower module
  */
 
 #ifndef HANDLE_FIRE_H_

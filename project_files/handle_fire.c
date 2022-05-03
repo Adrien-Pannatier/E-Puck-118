@@ -3,6 +3,8 @@
  *
  *  Created on: 21 avr. 2022
  *      Author: AdrienPannatier
+ *
+ *  Functions to control the alarm and the air blower module
  */
 
 #include "handle_fire.h"
@@ -12,7 +14,6 @@
 
 bool check_for_fire(void){
 	//turns on the camera, check then turns of
-	//MUST WAIT FOR CAMERA TO READ uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu
 	start_image_processing();
 	chThdSleepMilliseconds(1000);
 	if(get_line_position() == NOT_FOUND){
@@ -26,15 +27,15 @@ bool check_for_fire(void){
 }
 
 void deploy_antifire_measures(void){
-//activates the front led pin which turns on the air blower
+	//activates the front led pin which turns on the air blower
 	set_front_led(1);
-//turns on the siren
+	//turns on the siren
 	//playAddedMelody(PINPON,ML_SIMPLE_PLAY);
 }
 
 void stop_antifire_measures(void){
-//turns off the air blower
+	//turns off the air blower
 	set_front_led(0);
-//stops the melody
+	//stops the melody
 	//stopCurrentMelody();
 }

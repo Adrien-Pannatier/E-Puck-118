@@ -3,6 +3,9 @@
  *
  *  Created on: 12 avr. 2022
  *      Author: APrap
+ *
+ *  Thread declaration and defines for LED responses depending on
+ *  the state of the robot
  */
 #include "light_gestion.h"
 #include "ch.h"
