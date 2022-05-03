@@ -65,7 +65,7 @@ int main(void)
     po8030_start();
     process_image_start();
 
-    chThdSleepSeconds(1);
+    playAddedAlarmStart();
 
     //IR
     messagebus_init(&bus, &bus_lock, &bus_condvar);

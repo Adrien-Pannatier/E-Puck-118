@@ -115,17 +115,17 @@ void send_crossing(bool opening_right, bool opening_front, bool opening_left){
 
 }
 
-static void serial_start(void)
-{
-	static SerialConfig ser_cfg = {
-	    115200,
-	    0,
-	    0,
-	    0,
-	};
-
-	sdStart(&SD3, &ser_cfg); // UART3.
-}
+//static void serial_start(void)
+//{
+//	static SerialConfig ser_cfg = {
+//	    115200,
+//	    0,
+//	    0,
+//	    0,
+//	};
+//
+//	sdStart(&SD3, &ser_cfg); // UART3.
+//}
 
 void SendUint8ToComputer(uint8_t* data, uint16_t size)
 {

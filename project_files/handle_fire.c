@@ -29,8 +29,8 @@ bool check_for_fire(void){
 void deploy_antifire_measures(void){
 	//activates the front led pin which turns on the air blower
 	set_front_led(1);
-	//turns on the siren
-	//playAddedMelody(PINPON,ML_SIMPLE_PLAY);
+//turns on the siren
+	playAddedAlarm(PINPON,ML_SIMPLE_PLAY);
 }
 
 void stop_antifire_measures(void){
