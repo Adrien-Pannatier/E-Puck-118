@@ -3,40 +3,41 @@
  *
  *  Created on: 21 avr. 2022
  *      Author: AdrienPannatier
+ *
+ *  Functions to control the alarm and the air blower module
  */
 
 #include "handle_fire.h"
 #include "leds.h"
-#include <motors.h>
 #include "process_image.h"
-
-//#define WIGGLE_SPEED				300
-
-//internal functions
-//bool wiggle(void);
+#include "added_melodies.h"
 
 bool check_for_fire(void){
-	uint16_t position = NOT_FOUND;
+	//turns on the camera, check then turns of
 	start_image_processing();
-	position = get_peak_position();
-	if(position != NOT_FOUND){
-		stop_image_processing();
-		return true;
+	chThdSleepMilliseconds(500);
+	stop_image_processing();
+
+	if(get_line_position() == NOT_FOUND){
+		return false;
 	}
 	else{
-		stop_image_processing();
-		return false;
+		return true;
 	}
 }
 
 void deploy_antifire_measures(void){
-//activates the front led pin which turns on the air blower
+	//activates the front led pin which turns on the air blower
 	set_front_led(1);
+//turns on the siren
+	playAddedAlarm(PINPON,ML_SIMPLE_PLAY);
 }
 
 void stop_antifire_measures(void){
-//turns off the air blower
+	//turns off the air blower
 	set_front_led(0);
+	//stops the melody
+	//stopCurrentMelody();
 }
 
 //bool wiggle(void){

@@ -22,6 +22,8 @@
 #include "management_proximity.h"
 #include "management_movement.h"
 #include "management_transmissions.h"
+#include "usbcfg.h"
+#include "spi_comm.h"
 
 #include <process_image.h>
 #include <camera/po8030.h>
@@ -30,6 +32,7 @@ messagebus_t bus;
 MUTEX_DECL(bus_lock);
 CONDVAR_DECL(bus_condvar);
 
+//DEV
 static void serial_start(void)
 {
 	static SerialConfig ser_cfg = {
@@ -44,34 +47,46 @@ static void serial_start(void)
 
 int main(void)
 {
+	//Systeme
     halInit();
     chSysInit();
     mpu_init();
-    //LED_start();
-    messagebus_init(&bus, &bus_lock, &bus_condvar);
-    proximity_start();
-    spi_comm_start();
+
+    //LED
+//    spi_comm_start();
+    LED_start();
+
     dac_start();
     playMelodyStart();
-    //starts the camera
-    //starts the serial communication
-    serial_start();
-    //start the USB communication
-    usb_start();
+
+    //Camera
     dcmi_start();
     po8030_start();
     process_image_start();
-    
-    //start movement related thread
-    management_transmissions_start();
-    management_proximity_start();
-    management_movement_start();
 
+    playAddedAlarmStart();
+
+    //IR
     messagebus_init(&bus, &bus_lock, &bus_condvar);
+    proximity_start();
+    management_proximity_start();
+
+    //DEV
+    usb_start();
+    serial_start();
+
+    //Transmission
+    //management_transmissions_start();
+
+    //Movement
+    motors_init();
+    management_movement_start();
 
     /* Infinite loop. */
     while (1) {
+
     	chThdSleepMilliseconds(500);
+
     }
 }
 
