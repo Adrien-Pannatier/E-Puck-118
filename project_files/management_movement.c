@@ -3,6 +3,9 @@
  *
  *  Created on: 15 avr. 2022
  *      Author: APrap
+ *
+ *  Functions and defines to manage the state of the robot and the
+ *  way it moves and interacts with its surroundings
  */
 
 #include "ch.h"

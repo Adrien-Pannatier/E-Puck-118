@@ -3,6 +3,9 @@
  *
  *  Created on: 15 avr. 2022
  *      Author: APrap
+ *
+ *  Functions and defines to manage the state of the robot and the
+ *  way it moves and interacts with its surroundings
  */
 
 #ifndef MANAGEMENT_MOVEMENT_H_
@@ -25,9 +28,32 @@
 #define SOUTH							180
 #define WEST							270
 
+/**
+ * @brief Activates the movement thread
+ *
+ */
 void management_movement_start(void);
+
+/**
+ * @brief 			get if there is a fire or not
+ *
+ * @retval true		if there is a fire.
+ * @retval false	if there is no fire.
+ */
 bool get_fire_detected(void);
+
+/**
+ * @brief 			get the current state of the robot
+ *
+ * @return			int value of the state (see the moving states above)
+ */
 uint8_t get_movement_state(void);
+
+/**
+ * @brief 			get the current orientation of the robot
+ *
+ * @return			int value of the orientation (see the orientations above)
+ */
 uint8_t get_orientation(void);
 
 

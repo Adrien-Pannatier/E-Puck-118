@@ -3,10 +3,13 @@
  *
  *  Created on: 8 avr. 2022
  *      Author: AdrienPannatier
+ *
+ *  Functions and defines to store and play custom melodies and alarms, using the play_melody.h library
+ *
+ *  adapted from the library code
  */
 
 #include "added_melodies.h"
-#include "leds.h"
 
 //ROCKY melody
 static const uint16_t rocky_melody[] = {
