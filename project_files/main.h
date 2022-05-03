@@ -11,6 +11,7 @@ extern "C" {
 
 /* Constants for camera*/
 #define IMAGE_BUFFER_SIZE		640
+#define NB_LINE					20
 #define WIDTH_SLOPE				5
 #define MIN_FIRE_WIDTH			40
 #define ROTATION_THRESHOLD		10

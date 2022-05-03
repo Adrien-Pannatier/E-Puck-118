@@ -115,6 +115,10 @@ void send_crossing(bool opening_right, bool opening_front, bool opening_left){
 
 }
 
+void send_fire_detected(void){
+	store_buffer(FIRE_DETECTED);
+}
+
 //static void serial_start(void)
 //{
 //	static SerialConfig ser_cfg = {

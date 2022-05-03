@@ -98,7 +98,7 @@ static THD_FUNCTION(CaptureImage, arg) {
     (void)arg;
 
 	//Takes pixels 0 to IMAGE_BUFFER_SIZE of the line 10 + 11 (minimum 2 lines because reasons)
-	po8030_advanced_config(FORMAT_RGB565, 0, 200, IMAGE_BUFFER_SIZE, 2, SUBSAMPLING_X1, SUBSAMPLING_X1);
+	po8030_advanced_config(FORMAT_RGB565, 0, 190, IMAGE_BUFFER_SIZE, NB_LINE, SUBSAMPLING_X1, SUBSAMPLING_X1);
 	dcmi_enable_double_buffering();
 	dcmi_set_capture_mode(CAPTURE_ONE_SHOT);
 	dcmi_prepare();
@@ -122,7 +122,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 
 	uint8_t *img_buff_ptr;
-	uint8_t image[IMAGE_BUFFER_SIZE] = {0};
+	uint8_t image[NB_LINE][IMAGE_BUFFER_SIZE];
 	uint8_t red_value;
 	uint8_t green_value;
 	uint8_t blue_value;
@@ -146,19 +146,23 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 			if(un_sur_deux)
 			{
-				for(int i = 0; i < IMAGE_BUFFER_SIZE; i += 1)
+				for(int j = 0; j < NB_LINE; j += 1)
 				{
-					//blue + green + red
-					red_value = (img_buff_ptr[2*i] & MASK_RED_H)>>3;
-					blue_value = img_buff_ptr[2*i+1] & MASK_BLUE_L;
-					green_value  = (img_buff_ptr[2*i+1] & MASK_GREEN_L)>>5 | (img_buff_ptr[2*i] & MASK_GREEN_H)>>3;
+					for(int i = 0; i < IMAGE_BUFFER_SIZE; i += 1)
+					{
+						//blue + green + red
+						red_value = (img_buff_ptr[2*i + j*(2*IMAGE_BUFFER_SIZE)] & MASK_RED_H)>>3;
+						blue_value = img_buff_ptr[2*i+1 + j*(2*IMAGE_BUFFER_SIZE)] & MASK_BLUE_L;
+						green_value  = (img_buff_ptr[2*i+1 + j*(2*IMAGE_BUFFER_SIZE)] & MASK_GREEN_L)>>5 | (img_buff_ptr[2*i + j*(2*IMAGE_BUFFER_SIZE)] & MASK_GREEN_H)>>3;
 
-					image[i] = red_value + green_value + blue_value;
+						image[j][i] = red_value + green_value + blue_value;
+					}
 				}
+
 			}
 
 			//Detection fire with certainty counter to assure no fire
-			new_line_position = detection_fire(image);
+			//new_line_position = detection_fire(image[10]);
 
 			if(new_line_position == NOT_FOUND){
 				if(counter >= CERTAINTY_COUNTER){

@@ -122,8 +122,8 @@ static THD_FUNCTION(Movement, arg) {
     		opening_right = false;
     		opening_left = false;
     		opening_front = true;
-        	//if(check_for_fire()) deploy_antifire_measures();
-        	//else stop_antifire_measures();
+        	if(check_for_fire()) deploy_antifire_measures();
+        	else stop_antifire_measures();
 
     		movement_state = STOP;
     	}
@@ -470,19 +470,21 @@ void analysing_intersection(void){
 	//Check for opening
 	if(VL53L0X_get_dist_mm() >= VL53L0X_OPENING){
 		opening_front = true;
-//		set_led(LED1, 1);
+		set_led(LED1, 1);
 	}
 	if(get_calibrated_prox(IR3) <= NOISE_IR){
 		opening_right = true;
-//		set_led(LED3, 1);
+		set_led(LED3, 1);
 	}
 	if(get_calibrated_prox(IR6) <= NOISE_IR){
 		opening_left = true;
-//		set_led(LED7, 1);
+		set_led(LED7, 1);
 	}
 
 //	Send for mapping
+	chThdSleepMilliseconds(100);
 	send_crossing(opening_right, opening_front, opening_left);
+
 
 	//Changing movement state
 	movement_state = SEARCHING_FIRE;
@@ -528,7 +530,7 @@ void join_corridor(void){
 			break;
 		}
 	}
-//			clear_leds();
+			clear_leds();
 }
 
 void turn_towards_path(void){
@@ -548,6 +550,7 @@ void searching_for_fire(void){
 
 		//fire procedure
 		opening_front = false;
+		send_fire_detected();
 		movement_state = FIRE_FIGHTING;
 		return;
 	}
@@ -557,6 +560,7 @@ void searching_for_fire(void){
 		if(check_for_fire()){
 			//fire procedure
 			opening_left = false;
+			send_fire_detected();
 			movement_state = FIRE_FIGHTING;
 			return;
 		}
@@ -566,6 +570,7 @@ void searching_for_fire(void){
 
 				//fire procedure
 				opening_right = false;
+				send_fire_detected();
 				movement_state = FIRE_FIGHTING;
 				return;
 			}
@@ -577,6 +582,7 @@ void searching_for_fire(void){
 
 			//fire procedure
 			opening_right = false;
+			send_fire_detected();
 			movement_state = FIRE_FIGHTING;
 			return;
 		}
