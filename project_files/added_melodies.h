@@ -13,6 +13,34 @@
 #define ADDED_MELODIES_H_
 
 #include <audio/play_melody.h>
+#include <ch.h>
+#include <hal.h>
+
+//frequencies for the international alarm
+#define A_0		700
+#define A_1		735
+#define A_2		770
+#define A_3		805
+#define A_4		840
+#define A_5		875
+#define A_6		910
+#define A_7		945
+#define A_8		980
+#define A_9		1015
+#define A_10	1050
+#define A_11	1085
+#define A_12	1120
+#define A_13	1155
+#define A_14	1190
+#define A_15	1225
+#define A_16	1260
+#define A_17	1295
+#define A_18	1330
+#define A_19	1365
+#define A_20	1400
+#define A_21	1435
+#define A_22	1470
+#define A_23	1500
 
 //available new songs
 typedef enum{
@@ -25,6 +53,8 @@ typedef enum{
 typedef enum{
 	//internal alarms available
 	PINPON = 0,
+	SIREN_INTERNATIONAL,
+	BASEBALL,
 	NB_ADDED_ALARMS,	//tell the number of internal alarms
 }added_alarm_selection_t;
 
