@@ -113,31 +113,18 @@ static THD_FUNCTION(Movement, arg) {
 
 //    	time = chVTGetSystemTime();
 
-    	//DEV
-
-    	//Selector control
-    	if(get_selector() == 0){
-    		orientation = NORTH;
-    		opening_right = false;
-    		opening_left = false;
-    		opening_front = true;
-        	//if(check_for_fire()) deploy_antifire_measures();
-        	//else stop_antifire_measures();
-
-    		movement_state = STOP;
-    	}
-    	else if(movement_state == STOP){
-    		chThdSleepMilliseconds(500);
-    		movement_state = LEAVING_INTERSECTION;
-    	}
-
-
     	//call of all motion-related functions based on the current state of the robot
 
     	switch(movement_state){
 
 
-       	case STOP: 					stop_movement(); break;
+       	case STOP: 					stop_movement();
+//									opening_right = false;
+//									opening_left = false;
+//									opening_front = true;
+//									if(check_for_fire()) deploy_antifire_measures();
+//									else stop_antifire_measures();
+       								break;
 
 
     	case MOVING: 				followind_corridor(); break;
@@ -297,7 +284,7 @@ void followind_corridor(void){
 	//Reset counter left motor for mapping
 	left_motor_set_pos(NULL_POS);
 
-	while(1){
+	while(movement_state != STOP){
 
 		//PD
 		error = get_calibrated_prox(IR3) - get_calibrated_prox(IR6);
@@ -409,7 +396,7 @@ void moving_in_intersection(void){
 	right_motor_set_speed(SPEED_STEP);
 	left_motor_set_speed(SPEED_STEP);
 
-	while(1){
+	while(movement_state != STOP){
 
 		//Send movement for transmission every 1cm
 		if(left_motor_get_pos() >= (NSTEP_ONE_TURN / WHEEL_PERIMETER)){
@@ -544,7 +531,7 @@ void join_corridor(void){
 	//Reset counter for mapping
 	left_motor_set_pos(NULL_POS);
 
-	while(1){
+	while(movement_state != STOP){
 
 		//Send movement for transmission every 1cm
 		if(left_motor_get_pos() >= (NSTEP_ONE_TURN / WHEEL_PERIMETER)){
@@ -708,6 +695,10 @@ uint8_t get_movement_state(void){
 
 uint8_t get_orientation(void){
 	return orientation;
+}
+
+void set_movement_state(uint8_t state_to_set){
+	movement_state = state_to_set;
 }
 
 void management_movement_start(void){

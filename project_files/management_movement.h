@@ -56,5 +56,11 @@ uint8_t get_movement_state(void);
  */
 uint8_t get_orientation(void);
 
+/**
+ * @brief			Set the movement state
+ *
+ * @param state_to_set     Movement state to set defined in management_movement.h.
+ */
+void set_movement_state(uint8_t state_to_set);
 
 #endif /* MANAGEMENT_MOVEMENT_H_ */
