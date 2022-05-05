@@ -16,7 +16,7 @@
 #include <audio/play_melody.h>
 #include <sensors/proximity.h>
 #include <added_melodies.h>
-#include "chmtx.h"
+//#include "chmtx.h"
 #include "light_gestion.h"
 #include "audio/audio_thread.h"
 #include "management_proximity.h"
@@ -53,7 +53,7 @@ int main(void)
     mpu_init();
 
     //LED
-//    spi_comm_start();
+    //spi_comm_start();
     LED_start();
 
     dac_start();
