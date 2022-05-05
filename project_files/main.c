@@ -87,13 +87,13 @@ int main(void)
     while (1) {
 
     	//Selector control
-    	if(get_selector() == 0){
+    	switch (get_selector())
+    	{
+			case 0:  set_movement_state(STOP);	break;
 
-    		set_movement_state(STOP);
-    	}
-    	else if(get_movement_state() == STOP){
+			case 1: if(get_movement_state() == STOP) set_movement_state(LEAVING_INTERSECTION); break;
 
-    		set_movement_state(LEAVING_INTERSECTION);
+			default: set_movement_state(STOP);	break;
     	}
 
     	chThdSleepMilliseconds(50);

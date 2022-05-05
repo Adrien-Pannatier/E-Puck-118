@@ -55,34 +55,40 @@
 #define DEAD_END							18		//  __
 													// |  |
 
+#define CROSSING_UNKNOWN					19      //other
+
 #define FACING_UP							21		//North
 #define FACING_DOWN							22		//West
 #define FACING_RIGHT						23		//East
 #define FACING_LEFT							24		//South
 
-#define BUFFER_SIZE							40
-#define MAX_PTR_OFFSET						5
+#define BUFFER_SIZE							10
 #define DATA_SIZE							1		//uint8_t
+#define MAX_COUNTER							250
 
 
-//static uint16_t buffer_transmission[BUFFER_SIZE];
-//static uint8_t buffer_transmission_ptr_store = 0;
-//static uint8_t buffer_transmission_ptr_send = 0;
-static uint8_t data_out[DATA_SIZE] = {0};
+static uint8_t buffer_transmission[BUFFER_SIZE];
+static uint8_t buffer_transmission_ptr_store = 0;
+static uint8_t buffer_transmission_ptr_send = 0;
+static uint32_t buffer_store_counter = 0;
+static uint32_t buffer_send_counter = 0;
+//static bool reset_counter = false;
 
 void SendUint8ToComputer(uint8_t* data, uint16_t size);
 
 void store_buffer(uint8_t mapping_transmission){
 
-	data_out[0] = mapping_transmission;
-	SendUint8ToComputer(data_out, DATA_SIZE);
+	//store in the transmission buffer informations to send
+	buffer_transmission[buffer_transmission_ptr_store] = mapping_transmission;
 
-//	//store in the transmission buffer informations to send
-//	buffer_transmission[buffer_transmission_ptr_store] = mapping_transmission;
-//
-//	//Incr and reset buffer ptr
-//	buffer_transmission_ptr_store++;
-//	if(buffer_transmission_ptr_store == BUFFER_SIZE) buffer_transmission_ptr_store = 0;
+	//Incr and reset buffer ptr
+	buffer_transmission_ptr_store++;
+	buffer_store_counter ++;
+	if(buffer_transmission_ptr_store == BUFFER_SIZE) buffer_transmission_ptr_store = 0;
+//	if(buffer_store_counter == MAX_COUNTER){
+//		buffer_store_counter = 0;
+//		reset_counter = true;
+//	}
 
 }
 
@@ -112,20 +118,10 @@ void send_crossing(bool opening_right, bool opening_front, bool opening_left){
 	 else if(opening_left && !opening_right && opening_front) store_buffer(CROSSING_T_LEFT);
 	 else if(!opening_left && opening_right && opening_front) store_buffer(CROSSING_T_RIGHT);
 	 else if(opening_left && opening_right && opening_front) store_buffer(CROSSING_X);
+	 else store_buffer(CROSSING_UNKNOWN);
 
 }
 
-//static void serial_start(void)
-//{
-//	static SerialConfig ser_cfg = {
-//	    115200,
-//	    0,
-//	    0,
-//	    0,
-//	};
-//
-//	sdStart(&SD3, &ser_cfg); // UART3.
-//}
 
 void SendUint8ToComputer(uint8_t* data, uint16_t size)
 {
@@ -135,56 +131,49 @@ void SendUint8ToComputer(uint8_t* data, uint16_t size)
 }
 
 
-static THD_WORKING_AREA(waThdTransmissions, 500);
+static THD_WORKING_AREA(waThdTransmissions, 256);
 static THD_FUNCTION(Transmissions, arg) {
 
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
 
-    systime_t time;
-
-    for(int i = 0; i < DATA_SIZE; i++){
-    	data_out[i] = 0;
-    }
+//    systime_t time;
+//
+//    for(int i = 0; i < DATA_SIZE; i++){
+//    	data_out[i] = 0;
+//    }
 
     while(1){
 
-    	time = chVTGetSystemTime();
-
-
-
-//    	//Selector control
-//    	if(get_selector() == 0) movement_state = STOP;
-//    	else if(movement_state == STOP){
-//    		chThdSleepMilliseconds(500);
-//    		movement_state = LEAVING_INTERSECTION;
-//    	}
-
+//    	time = chVTGetSystemTime();
 
     	//Transmission send
 
     	//Check if there is something to send in the buffer
-//    	if(buffer_transmission_ptr_send < buffer_transmission_ptr_store || (buffer_transmission_ptr_store < MAX_PTR_OFFSET && buffer_transmission_ptr_send > BUFFER_SIZE - MAX_PTR_OFFSET)){
-//
-//			//Send to computer
-//    		data_out[0] = buffer_transmission[buffer_transmission_ptr_send];
-//    		SendUint8ToComputer(data_out, DATA_SIZE);
-//
-//    		//chprintf((BaseSequentialStream *)&SD3, "START% \n\n\r", buffer_transmission[buffer_transmission_ptr_send]);
-//
-//
-//			//Incr and reset buffer ptr
-//			buffer_transmission_ptr_send++;
-//			if(buffer_transmission_ptr_send == BUFFER_SIZE) buffer_transmission_ptr_send = 0;
-//    	}
+    	if(buffer_send_counter < buffer_store_counter) //|| reset_counter)
+    	{
 
+			//Send to computer
+    		SendUint8ToComputer(&buffer_transmission[buffer_transmission_ptr_send], DATA_SIZE);
 
+    		//chprintf((BaseSequentialStream *)&SD3, "START% \n\n\r", buffer_transmission[buffer_transmission_ptr_send]);
 
-    	chThdSleepUntilWindowed(time, time + MS2ST(200));
+			//Incr and reset buffer ptr
+			buffer_transmission_ptr_send++;
+			buffer_send_counter++;
+			if(buffer_transmission_ptr_send == BUFFER_SIZE) buffer_transmission_ptr_send = 0;
+//			if(buffer_store_counter == MAX_COUNTER){
+//				buffer_store_counter = 0;
+//				reset_counter = false;
+//			}
 
+    	}
+
+    	chThdSleepMilliseconds(100);
+//    	chThdSleepUntilWindowed(time, time + MS2ST(200));
     }
 }
 
 void management_transmissions_start(void){
-	   chThdCreateStatic(waThdTransmissions, sizeof(waThdTransmissions), NORMALPRIO - 1, Transmissions, NULL);
+	   chThdCreateStatic(waThdTransmissions, sizeof(waThdTransmissions), NORMALPRIO -1, Transmissions, NULL);
 }
