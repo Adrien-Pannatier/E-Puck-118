@@ -56,8 +56,8 @@ int main(void)
     mpu_init();
 
     //LED
-//    spi_comm_start();
-    LED_start();
+    spi_comm_start();
+    //LED_start();
 
     //Music
     dac_start();

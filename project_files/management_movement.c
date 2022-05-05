@@ -645,7 +645,7 @@ void fighting_fire(void){
  */
 void reseting_orientation(void){
 
-	//NORTH = 0, EAST = 90, SOUth = 180, WEST = 270
+	//NORTH = 0, EAST = 90, SOUTH = 180, WEST = 270
 	switch(orientation){
 		case NORTH: 	switch(orientation_before_check){
 							case	NORTH: 	break;
