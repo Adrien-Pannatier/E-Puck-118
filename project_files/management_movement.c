@@ -24,6 +24,8 @@
 #include "button.h"
 #include "selector.h"
 
+#include "added_melodies.h"
+
 
 //Moving parameters
 #define CERTAINTY						3												//minimum occurrence of a measure to have a good confidence
@@ -118,6 +120,7 @@ static THD_FUNCTION(Movement, arg) {
 
     	//Selector control
     	if(get_selector() == 0){
+    		stopCurrentAlarm();
     		orientation = NORTH;
     		opening_right = false;
     		opening_left = false;
@@ -128,6 +131,7 @@ static THD_FUNCTION(Movement, arg) {
     		movement_state = STOP;
     	}
     	else if(movement_state == STOP){
+    		playAddedMelody(ROCKY,0);
     		chThdSleepMilliseconds(500);
     		movement_state = LEAVING_INTERSECTION;
     	}

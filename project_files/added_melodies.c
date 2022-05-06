@@ -204,8 +204,8 @@ static const float siren_I_tempo[] = {
 };
 
 static const float baseball_tempo[] = {
-	12, 12, 12, 16/3,
-	16, 2, 1
+	6, 6, 6, 8/3,
+	8, 1, 1
 };
 
 
