@@ -570,6 +570,10 @@ void choosing_direction(void){
 	else if (opening_front)		desired_orientation = orientation_before_check;
 	else if (opening_left) 		desired_orientation = orientation_before_check + LEFT_90;
 	else if (!opening_front && !opening_right && !opening_left) desired_orientation = orientation_before_check + LEFT_180;
+
+	//Modulo 360°
+	if(desired_orientation >= MAX_ANGLE) desired_orientation -= MAX_ANGLE;
+	else if(desired_orientation < MIN_ANGLE) desired_orientation += MAX_ANGLE;
 }
 
 /**
