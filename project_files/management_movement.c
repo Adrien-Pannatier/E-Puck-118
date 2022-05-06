@@ -15,6 +15,7 @@
 #include "management_proximity.h"
 #include "management_transmissions.h"
 #include "handle_fire.h"
+#include "stdlib.h"
 
 //provisoir pour debug
 #include "leds.h"
@@ -63,6 +64,7 @@
 
 //Private variables
 static int16_t orientation_before_check = NORTH;
+static int16_t desired_orientation = NORTH;
 static bool fire_detected = false;
 static bool opening_right = false, opening_left = false, opening_front = true;
 
@@ -153,6 +155,11 @@ static THD_FUNCTION(Movement, arg) {
 //DEV
 //ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
+int16_t absolute_value_int16(int16_t value){
+	if(value < 0) value = -value;
+	return value;
+}
+
 int32_t absolute_value_int32(int32_t value){
 	if(value < 0) value = -value;
 	return value;
@@ -181,10 +188,6 @@ int infinity_selector(void){
 		return(-1);
 	}
 	return(0);
-}
-int16_t absolute_value_int16(int16_t value){
-	if(value < 0) value = -value;
-	return value;
 }
 
 void PID_tuning(void){
@@ -516,7 +519,7 @@ void analysing_intersection(void){
  */
 void join_corridor(void){
 
-	//Take the right path
+	//Turn to the right direction
 	turn_towards_path();
 
 	//reset opening booleans
@@ -559,14 +562,14 @@ void join_corridor(void){
 }
 
 /**
- * @brief 			Turn to follow the right wall
+ * @brief 			Chose the right direction (follow right wall)
  *
  */
-void turn_towards_path(void){
-	if(opening_right)			rotate(RIGHT_90);
-	else if (opening_front)		return;
-	else if (opening_left) 		rotate(LEFT_90);
-	else if (!opening_front && !opening_right && !opening_left) rotate(LEFT_180);
+void choosing_direction(void){
+	if(opening_right)			desired_orientation = orientation_before_check + RIGHT_90;
+	else if (opening_front)		desired_orientation = orientation_before_check;
+	else if (opening_left) 		desired_orientation = orientation_before_check + LEFT_90;
+	else if (!opening_front && !opening_right && !opening_left) desired_orientation = orientation_before_check + LEFT_180;
 }
 
 /**
@@ -618,9 +621,6 @@ void searching_for_fire(void){
 		}
 	}
 
-	//Orientation reset after firecheck
-	reseting_orientation();
-
 	movement_state = LEAVING_INTERSECTION;
 }
 
@@ -640,44 +640,20 @@ void fighting_fire(void){
 }
 
 /**
- * @brief 			Restoring the previously saved orientation
+ * @brief 			Turn into the right direction to follow the maze
  *
  */
-void reseting_orientation(void){
+void turn_towards_path(void){
 
-	//NORTH = 0, EAST = 90, SOUTH = 180, WEST = 270
-	switch(orientation){
-		case NORTH: 	switch(orientation_before_check){
-							case	NORTH: 	break;
-							case	EAST:	rotate(RIGHT_90); break;
-							case	SOUTH:	rotate(LEFT_180); break;
-							case	WEST: 	rotate(LEFT_90); break;
-							default		:	break;
-		}break;
-		case EAST: 		switch(orientation_before_check){
-							case	NORTH: 	rotate(LEFT_90); break;
-							case	EAST:	break;
-							case	SOUTH:	rotate(RIGHT_90); break;
-							case	WEST: 	rotate(RIGHT_180); break;
-							default		:	break;
-		}break;
-		case SOUTH: 	switch(orientation_before_check){
-							case	NORTH: 	rotate(LEFT_180); break;
-							case	EAST:	rotate(LEFT_90); break;
-							case	SOUTH:	break;
-							case	WEST: 	rotate(RIGHT_90); break;
-							default		:	break;
-		}break;
-		case WEST: 		switch(orientation_before_check){
-							case	NORTH: 	rotate(RIGHT_90); break;
-							case	EAST:	rotate(RIGHT_180); break;
-							case	SOUTH:	rotate(LEFT_90); break;
-							case	WEST: 	break;
-							default		:	break;
-		}break;
-		default: 		break;
+	//Choose the right direction
+	choosing_direction();
+
+	//Turn in the right direction until the right orientation is reached
+	while(orientation != desired_orientation)
+	{
+			if(absolute_value_int16(desired_orientation - orientation) <= absolute_value_int16(desired_orientation - orientation - MAX_ANGLE)) rotate(RIGHT_90);
+			else rotate(LEFT_90);
 	}
-	orientation_before_check = NULL_POS;
 }
 
 /*************************END INTERNAL FUNCTIONS**********************************/
