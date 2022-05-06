@@ -119,9 +119,10 @@ static THD_FUNCTION(Movement, arg) {
 
 
        	case STOP: 					stop_movement();
-//									opening_right = false;
-//									opening_left = false;
-//									opening_front = true;
+									opening_right = false;
+									opening_left = false;
+									opening_front = true;
+									orientation = NORTH;
 //									if(check_for_fire()) deploy_antifire_measures();
 //									else stop_antifire_measures();
        								break;
@@ -478,6 +479,7 @@ void rotate(int rotation_angle){
 	}
 
 	update_orientation(rotation_angle);
+	chThdSleepMilliseconds(20);
 }
 
 /**
@@ -554,6 +556,7 @@ void join_corridor(void){
 
 			break;
 		}
+		chThdSleepMilliseconds(20);
 	}
 //			clear_leds();
 }
@@ -574,7 +577,8 @@ void turn_towards_path(void){
  *
  */
 void searching_for_fire(void){
-
+	send_crossing(opening_right, opening_front, opening_left);
+	chThdSleepMilliseconds(20);
 	//Checking front
 	if(check_for_fire()){
 
