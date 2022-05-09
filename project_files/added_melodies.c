@@ -93,10 +93,35 @@ static const uint16_t rocky_melody[] = {
 	NOTE_A4,0
 };
 
-//PINPON melody
-static const uint16_t pinpon_melody[] = {
+//GHOST_BUSTERS song
+static const uint16_t ghost_buster_song[] = {
+	NOTE_D4, NOTE_D4, NOTE_FS4, NOTE_D4, NOTE_E4,
+	NOTE_C4, 0, 0, NOTE_D4, NOTE_D4, NOTE_D4,
+	NOTE_D4, NOTE_C4, NOTE_D4, 0
+};
+
+//PINPON alarm
+static const uint16_t pinpon_alarm[] = {
 	NOTE_A4, NOTE_B4,NOTE_A4, NOTE_B4,
 	NOTE_A4, NOTE_B4,
+};
+
+//SIREN_I alarm
+static const uint16_t siren_I_alarm[] = {
+	A_0, A_1, A_2, A_3, A_4, A_5, A_6, A_7,
+	A_8, A_9, A_10, A_11, A_12, A_13, A_14,
+	A_15, A_16, A_17, A_18, A_19, A_20, A_21,
+	A_22, A_23,
+
+	A_23, A_22, A_21, A_20, A_19, A_18, A_17,
+	A_16, A_15, A_14, A_13, A_12, A_11, A_10,
+	A_9, A_8, A_7, A_6, A_5, A_4, A_3, A_2, A_1,
+	A_0,0
+};
+
+static const uint16_t baseball_alarm[] = {
+	NOTE_G3, NOTE_C4, NOTE_E4, NOTE_G4,
+	NOTE_E4, NOTE_G4, 0
 };
 
 //ROCKY tempo
@@ -168,10 +193,36 @@ static const float rocky_tempo[] = {
 
 };
 
+//GHOST_BUSTERS tempo
+static const float ghost_buster_tempo[] = {
+	16, 16, 8, 8, 8,
+	4, 16, 16, 16, 16, 16,
+	16, 8, 4, 4
+};
+
 static const float pinpon_tempo[] = {
 	1,1,1,
 	1,1,1
 };
+
+static const float siren_I_tempo[] = {
+	2, 2, 2, 2, 2, 2, 2, 2,
+	2, 2, 2, 2, 2, 2, 2,
+	2, 2, 2, 2, 2, 2, 2,
+	2, 2,
+
+	2, 2, 2, 2, 2, 2, 2,
+	2, 2, 2, 2, 2, 2, 2,
+	2, 2, 2, 2, 2, 2, 2, 2, 2,
+	2,2
+};
+
+static const float baseball_tempo[] = {
+	6, 6, 6, 8/3,
+	8, 1, 1
+};
+
+
 
 static const melody_t added_melodies[NB_ADDED_SONGS] = {
   //ROCKY
@@ -180,15 +231,33 @@ static const melody_t added_melodies[NB_ADDED_SONGS] = {
     .tempo = rocky_tempo,
     .length = sizeof(rocky_melody)/sizeof(uint16_t),
   },
+  //GHOST BUSTER
+  {
+    .notes = ghost_buster_song,
+    .tempo = ghost_buster_tempo,
+    .length = sizeof(ghost_buster_song)/sizeof(uint16_t),
+  },
 };
 
 static const melody_t added_alarms[NB_ADDED_ALARMS] = {
   //PINPON
   {
-    .notes = pinpon_melody,
+    .notes = pinpon_alarm,
     .tempo = pinpon_tempo,
-    .length = sizeof(pinpon_melody)/sizeof(uint16_t),
+    .length = sizeof(pinpon_alarm)/sizeof(uint16_t),
   },
+  //SIREN_INTERNATIONAL
+  {
+	.notes = siren_I_alarm,
+	.tempo = siren_I_tempo,
+	.length = sizeof(siren_I_alarm)/sizeof(uint16_t),
+  },
+  //BASEBALL
+  {
+	.notes = baseball_alarm,
+	.tempo = baseball_tempo,
+	.length = sizeof(baseball_alarm)/sizeof(uint16_t),
+  }
 };
 
 void playAddedMelody(added_song_selection_t choice, play_melody_option_t option){

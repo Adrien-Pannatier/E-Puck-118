@@ -24,6 +24,8 @@
 #include "button.h"
 #include "selector.h"
 
+#include "added_melodies.h"
+
 
 //Moving parameters
 #define CERTAINTY						3												//minimum occurrence of a measure to have a good confidence
