@@ -57,7 +57,7 @@ int main(void)
 
     //LED
     //spi_comm_start();
-    //LED_start();
+    LED_start();
 
     //Music
     dac_start();
