@@ -122,6 +122,9 @@ void send_crossing(bool opening_right, bool opening_front, bool opening_left){
 
 }
 
+void send_fire(void){
+	store_buffer(FIRE_DETECTED);
+}
 
 void SendUint8ToComputer(uint8_t* data, uint16_t size)
 {

@@ -636,6 +636,7 @@ void fighting_fire(void){
 
 	//Fight against fire
 	deploy_antifire_measures();
+	send_fire();
 	chThdSleepMilliseconds(1000);
 	stop_antifire_measures();
 
