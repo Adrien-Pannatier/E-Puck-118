@@ -100,6 +100,8 @@ void turn_towards_path(void);
 void fighting_fire(void);
 void searching_for_fire(void);
 void reseting_orientation(void);
+bool check_end_of_maze(void);
+void end_of_maze_celebration(void);
 
 //Thread of motion management
 
@@ -510,8 +512,13 @@ void analysing_intersection(void){
 	//Send crossing for mapping
 	send_crossing(opening_right, opening_front, opening_left);
 
-	//Changing movement state
-	movement_state = SEARCHING_FIRE;
+	//CHECKING IF END OF MAZE
+	if(check_end_of_maze() == true){
+		movement_state = END_OF_MAZE;
+	}
+	else{
+		movement_state = SEARCHING_FIRE;
+	}
 }
 
 /**
@@ -685,6 +692,34 @@ void reseting_orientation(void){
 		default: 		break;
 	}
 	orientation_before_check = NULL_POS;
+}
+
+/**
+ * @brief 			Check if the end of the maze is reached
+ *
+ * @retval true		if the robot is out of the maze.
+ * @retval false	if it is still inside the maze.
+ */
+bool check_end_of_maze(void){
+	if(opening_front && opening_left && opening_right){
+		if(get_calibrated_prox(IR4) <= NOISE_IR && get_calibrated_prox(IR5) <= NOISE_IR &&
+		   get_calibrated_prox(IR2) <= NOISE_IR && get_calibrated_prox(IR7) <= NOISE_IR){
+			return true;
+		}
+		return false;
+	}
+	return false;
+}
+
+/**
+ * @brief 			celebrate if at the end of the maze
+ *
+ */
+void end_of_maze_celebration(void){
+	playAddedMelody(ROCKY,ML_SIMPLE_PLAY);
+	rotate(LEFT_360);
+	rotate(RIGHT_360);
+	movement_state = STOP;
 }
 
 /*************************END INTERNAL FUNCTIONS**********************************/
