@@ -90,7 +90,7 @@ static const uint16_t rocky_melody[] = {
 
 	NOTE_A4, NOTE_G4, NOTE_A4, NOTE_C4,
 
-	NOTE_A4,0
+	NOTE_A4,0,
 };
 
 //GHOST_BUSTERS song
@@ -189,7 +189,7 @@ static const float rocky_tempo[] = {
 
 	4, 16, 16/3, 4,
 
-	4/5,1
+	4/5,1,
 
 };
 

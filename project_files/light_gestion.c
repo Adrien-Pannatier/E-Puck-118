@@ -81,6 +81,12 @@ static THD_FUNCTION(ThdLED, arg) {
 
 
        	}
+    	else if(get_movement_state() == END_OF_MAZE){
+    		set_body_led(1);
+    	    chThdSleepMilliseconds(ALAMRM_SPEED);
+    	    set_body_led(0);
+    	    chThdSleepMilliseconds(ALAMRM_SPEED);
+    	}
        	else //if(get_movement_state() == other)
        	{
        		//Siren fire-fighter truck
