@@ -121,6 +121,7 @@ static THD_FUNCTION(Movement, arg) {
     	//Selector control
     	if(get_selector() == 0){
     		stopCurrentAlarm();
+    		stopCurrentMelody();
     		orientation = NORTH;
     		opening_right = false;
     		opening_left = false;
@@ -131,7 +132,7 @@ static THD_FUNCTION(Movement, arg) {
     		movement_state = STOP;
     	}
     	else if(movement_state == STOP){
-    		playAddedMelody(ROCKY,0);
+    		playAddedMelody(GHOST_BUSTERS,0);
     		chThdSleepMilliseconds(500);
     		movement_state = LEAVING_INTERSECTION;
     	}
