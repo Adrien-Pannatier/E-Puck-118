@@ -22,6 +22,7 @@
 #define LEAVING_INTERSECTION			4										//Regaining the corridor
 #define SEARCHING_FIRE					5										//Searching for fire around
 #define FIRE_FIGHTING					6										//Taking actions against fire
+#define END_OF_MAZE						7
 
 #define NORTH							0
 #define EAST							90

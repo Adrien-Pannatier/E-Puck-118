@@ -25,6 +25,8 @@
 #include "button.h"
 #include "selector.h"
 
+#include "added_melodies.h"
+
 
 //Moving parameters
 #define CERTAINTY						3												//minimum occurrence of a measure to have a good confidence
@@ -100,6 +102,8 @@ void turn_towards_path(void);
 void fighting_fire(void);
 void searching_for_fire(void);
 void reseting_orientation(void);
+bool check_end_of_maze(void);
+void end_of_maze_celebration(void);
 
 //Thread of motion management
 
@@ -121,9 +125,10 @@ static THD_FUNCTION(Movement, arg) {
 
 
        	case STOP: 					stop_movement();
-//									opening_right = false;
-//									opening_left = false;
-//									opening_front = true;
+									opening_right = false;
+									opening_left = false;
+									opening_front = true;
+									orientation = NORTH;
 //									if(check_for_fire()) deploy_antifire_measures();
 //									else stop_antifire_measures();
        								break;
@@ -142,6 +147,8 @@ static THD_FUNCTION(Movement, arg) {
     	case SEARCHING_FIRE:		searching_for_fire(); break;
 
     	case FIRE_FIGHTING: 		fighting_fire(); break;
+
+    	case END_OF_MAZE:			end_of_maze_celebration(); break;
 
     	default: 					movement_state = STOP; break;
     	}
@@ -509,8 +516,13 @@ void analysing_intersection(void){
 	//Send crossing for mapping
 	send_crossing(opening_right, opening_front, opening_left);
 
-	//Changing movement state
-	movement_state = SEARCHING_FIRE;
+	//CHECKING IF END OF MAZE
+	if(check_end_of_maze() == true){
+		movement_state = END_OF_MAZE;
+	}
+	else{
+		movement_state = SEARCHING_FIRE;
+	}
 }
 
 /**
@@ -557,6 +569,7 @@ void join_corridor(void){
 
 			break;
 		}
+		chThdSleepMilliseconds(20);
 	}
 //			clear_leds();
 }
@@ -581,7 +594,8 @@ void choosing_direction(void){
  *
  */
 void searching_for_fire(void){
-
+	send_crossing(opening_right, opening_front, opening_left);
+	chThdSleepMilliseconds(20);
 	//Checking front
 	if(check_for_fire()){
 
@@ -636,6 +650,7 @@ void fighting_fire(void){
 
 	//Fight against fire
 	deploy_antifire_measures();
+	send_fire();
 	chThdSleepMilliseconds(1000);
 	stop_antifire_measures();
 
@@ -658,6 +673,41 @@ void turn_towards_path(void){
 			if(absolute_value_int16(desired_orientation - orientation) <= absolute_value_int16(desired_orientation - orientation - MAX_ANGLE)) rotate(RIGHT_90);
 			else rotate(LEFT_90);
 	}
+}
+
+/**
+ * @brief 			Check if the end of the maze is reached
+ *
+ * @retval true		if the robot is out of the maze.
+ * @retval false	if it is still inside the maze.
+ */
+bool check_end_of_maze(void){
+	if(opening_front && opening_left && opening_right){
+		if(/*get_calibrated_prox(IR4) <= NOISE_IR && get_calibrated_prox(IR5) <= NOISE_IR &&*/
+			get_calibrated_prox(IR2) <= NOISE_IR && get_calibrated_prox(IR7) <= NOISE_IR){
+			return true;
+		}
+		return false;
+	}
+	return false;
+}
+
+/**
+ * @brief 			celebrate if at the end of the maze
+ *
+ */
+void end_of_maze_celebration(void){
+	playAddedMelody(ROCKY,ML_SIMPLE_PLAY);
+	rotate(LEFT_360);
+	rotate(RIGHT_360);
+	rotate(LEFT_360);
+	rotate(RIGHT_360);
+	rotate(LEFT_360);
+	rotate(RIGHT_360);
+	waitMelodyHasFinished();
+	chThdSleepMilliseconds(1000);
+
+
 }
 
 /*************************END INTERNAL FUNCTIONS**********************************/
