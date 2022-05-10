@@ -3,6 +3,8 @@ import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, Button, RadioButtons
+from matplotlib.offsetbox import TextArea, DrawingArea, OffsetImage, AnnotationBbox
+import matplotlib.image as mpimg
 import serial
 import struct
 import sys
@@ -40,9 +42,20 @@ max_Y = 200
 map_matrix = np.zeros((max_Y,max_X))
 
 #colormap
-colormap = matplotlib.colors.ListedColormap(['white','#c1c0bf', 'black', '#fe9200', 'red','red','yellow']) #in order: void,ground,walls,fire,e-pouck ext, e-pouck int, arrow
-bounds = [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5]
+colormap = matplotlib.colors.ListedColormap(['#dadadb','#c1c0bf', 'black', '#fe9200', 'red','red','yellow','red','yellow']) #in order: void,ground,walls,fire1,e-pouck ext, e-pouck int, arrow, fire2, fire3
+bounds = [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5]
 perso_norm = matplotlib.colors.BoundaryNorm(bounds, colormap.N)
+
+#COLOR CONSTANTS
+C_VOID = 1
+C_GROUND = 2
+C_WALLS = 3
+C_FIRE_ORANGE = 4
+C_EPUCK_EXT = 5
+C_EPUCK_INT = 6
+C_ARROW = 7
+C_FIRE_RED = 8
+C_FIRE_YELLOW = 9
 
 #CONSTANTS FOR TRANSMISSION
 DO_NOTHING = 0
@@ -91,34 +104,66 @@ def handle_close(evt):
     print(goodbye)
 
 def draw_epuck():
+    global posF_X
+    global posF_Y
+    global map_matrix
     #ground from e-puck position
-    map_matrix[(posR_Y-5):(posR_Y+6),(posR_X-5):(posR_X+6)] = 2
+    map_matrix[(posR_Y-5):(posR_Y+6),(posR_X-5):(posR_X+6)] =     C_GROUND
 
     #ROBOT MODEL
     #plot a circle of diameter 7 at robot position
-    map_matrix[(posR_Y-3),(posR_X-1):(posR_X+2)] = 5
-    map_matrix[(posR_Y-2),(posR_X-2)] = 5
-    map_matrix[(posR_Y-2),(posR_X+2)] = 5
-    map_matrix[(posR_Y-1):(posR_Y+2),(posR_X-3)] = 5
-    map_matrix[(posR_Y-1):(posR_Y+2),(posR_X+3)] = 5
-    map_matrix[(posR_Y+2),(posR_X-2)] = 5
-    map_matrix[(posR_Y+2),(posR_X+2)] = 5
-    map_matrix[(posR_Y+3),(posR_X-1):(posR_X+2)] = 5
-    map_matrix[(posR_Y-2):(posR_Y+3),(posR_X-1):(posR_X+2)] = 6
-    map_matrix[(posR_Y-1):(posR_Y+2),(posR_X-2):(posR_X+3)] = 6
+    map_matrix[(posR_Y-3),(posR_X-1):(posR_X+2)] =                C_EPUCK_EXT
+    map_matrix[(posR_Y-2),(posR_X-2)] =                           C_EPUCK_EXT
+    map_matrix[(posR_Y-2),(posR_X+2)] =                           C_EPUCK_EXT
+    map_matrix[(posR_Y-1):(posR_Y+2),(posR_X-3)] =                C_EPUCK_EXT
+    map_matrix[(posR_Y-1):(posR_Y+2),(posR_X+3)] =                C_EPUCK_EXT
+    map_matrix[(posR_Y+2),(posR_X-2)] =                           C_EPUCK_EXT
+    map_matrix[(posR_Y+2),(posR_X+2)] =                           C_EPUCK_EXT
+    map_matrix[(posR_Y+3),(posR_X-1):(posR_X+2)] =                C_EPUCK_EXT
+    map_matrix[(posR_Y-2):(posR_Y+3),(posR_X-1):(posR_X+2)] =     C_EPUCK_INT
+    map_matrix[(posR_Y-1):(posR_Y+2),(posR_X-2):(posR_X+3)] =     C_EPUCK_INT
     
-def draw_hole_up():
-    #background hole up
-    map_matrix[(posR_Y-16):(posR_Y-5),(posR_X-5):(posR_X+6)] = 2
-def draw_hole_down():
-    #background hole down
-    map_matrix[(posR_Y+6):(posR_Y+17),(posR_X-5):(posR_X+6)] = 2
-def draw_hole_right():
-    #background hole right
-    map_matrix[(posR_Y-5):(posR_Y+6),(posR_X+6):(posR_X+17)] = 2
-def draw_hole_left():
-    #background hole left
-    map_matrix[(posR_Y-5):(posR_Y+6),(posR_X-16):(posR_X-5)] = 2
+def draw_fire():
+    global posF_X
+    global posF_Y
+    global map_matrix
+
+    #red layer
+    map_matrix[(posF_Y+1):(posF_Y+4),(posF_X-4):(posF_X+5)] =     C_FIRE_RED
+    map_matrix[(posF_Y-2):(posF_Y+1),(posF_X-2):(posF_X+4)] =     C_FIRE_RED
+    map_matrix[posF_Y,(posF_X-3)] =                               C_FIRE_RED
+    map_matrix[posF_Y,(posF_X+4)] =                               C_FIRE_RED
+    map_matrix[(posF_Y-3),(posF_X-2):(posF_X+2)] =                C_FIRE_RED
+    map_matrix[(posF_Y-3),(posF_X+3)] =                           C_FIRE_RED
+    map_matrix[(posF_Y-4),(posF_X-2)] =                           C_FIRE_RED
+    map_matrix[(posF_Y-4),(posF_X):(posF_X+2)] =                  C_FIRE_RED    
+    map_matrix[(posF_Y-6):(posF_Y-3),(posF_X+1)] =                C_FIRE_RED
+    
+    #orange layer
+    map_matrix[(posF_Y+2):(posF_Y+4),(posF_X-2):(posF_X+4)] =     C_FIRE_ORANGE
+    map_matrix[(posF_Y):(posF_Y+2),(posF_X-1):(posF_X+2)] =       C_FIRE_ORANGE
+    map_matrix[(posF_Y+1),(posF_X+2)] =                           C_FIRE_ORANGE
+    map_matrix[(posF_Y-2):posF_Y,posF_X] =                        C_FIRE_ORANGE
+    
+    #yellow layer
+    map_matrix[posF_Y:(posF_Y+2),posF_X:(posF_X+2)] =             C_FIRE_YELLOW
+    map_matrix[(posF_Y+2):(posF_Y+4),(posF_X-1):(posF_X+3)] =     C_FIRE_YELLOW
+    map_matrix[(posF_Y-1),posF_X] =                               C_FIRE_YELLOW
+    
+    # def draw_hole_up():
+#     #background hole up
+#     map_matrix[(posR_Y-16):(posR_Y-5),(posR_X-5):(posR_X+6)] = 2
+# def draw_hole_down():
+#     #background hole down
+#     map_matrix[(posR_Y+6):(posR_Y+17),(posR_X-5):(posR_X+6)] = 2
+# def draw_hole_right():
+#     #background hole right
+#     map_matrix[(posR_Y-5):(posR_Y+6),(posR_X+6):(posR_X+17)] = 2
+# def draw_hole_left():
+#     #background hole left
+#     map_matrix[(posR_Y-5):(posR_Y+6),(posR_X-16):(posR_X-5)] = 2
+    
+    
             
 def update_epuck_position(STAY_OR_GO):
     global posR_Y
@@ -130,71 +175,71 @@ def update_epuck_position(STAY_OR_GO):
     #draw epuck
         draw_epuck()
     #arrow facing up
-        map_matrix[(posR_Y-2):(posR_Y+3),posR_X] = 7
-        map_matrix[(posR_Y-1),(posR_X-1):(posR_X+2)] = 7
-        map_matrix[posR_Y,posR_X-2] = 7
-        map_matrix[posR_Y,posR_X+2] = 7
+        map_matrix[(posR_Y-2):(posR_Y+3),posR_X] =                C_ARROW
+        map_matrix[(posR_Y-1),(posR_X-1):(posR_X+2)] =            C_ARROW
+        map_matrix[posR_Y,posR_X-2] =                             C_ARROW
+        map_matrix[posR_Y,posR_X+2] =                             C_ARROW
     elif(orientation == FACING_DOWN):
     #forward epuck in direction
         posR_Y = posR_Y + STAY_OR_GO
     #draw epuck
         draw_epuck()
     #arrow facing down
-        map_matrix[(posR_Y-2):(posR_Y+3),posR_X] = 7
-        map_matrix[(posR_Y+1),(posR_X-1):(posR_X+2)] = 7
-        map_matrix[posR_Y,posR_X-2] = 7
-        map_matrix[posR_Y,posR_X+2] = 7
+        map_matrix[(posR_Y-2):(posR_Y+3),posR_X] =                C_ARROW
+        map_matrix[(posR_Y+1),(posR_X-1):(posR_X+2)] =            C_ARROW
+        map_matrix[posR_Y,posR_X-2] =                             C_ARROW
+        map_matrix[posR_Y,posR_X+2] =                             C_ARROW
     elif(orientation == FACING_RIGHT):
     #forward epuck in direction
         posR_X = posR_X + STAY_OR_GO
     #draw epuck
         draw_epuck()
     #arrow facing right
-        map_matrix[posR_Y,(posR_X-2):(posR_X+3)] = 7
-        map_matrix[(posR_Y-1):(posR_Y+2),(posR_X+1)] = 7
-        map_matrix[posR_Y-2,posR_X] = 7
-        map_matrix[posR_Y+2,posR_X] = 7
+        map_matrix[posR_Y,(posR_X-2):(posR_X+3)] =                C_ARROW
+        map_matrix[(posR_Y-1):(posR_Y+2),(posR_X+1)] =            C_ARROW
+        map_matrix[posR_Y-2,posR_X] =                             C_ARROW
+        map_matrix[posR_Y+2,posR_X] =                             C_ARROW
     elif(orientation == FACING_LEFT):
     #forward epuck in direction
         posR_X = posR_X - STAY_OR_GO
     #draw epuck
         draw_epuck()
     #arrow facing right
-        map_matrix[posR_Y,(posR_X-2):(posR_X+3)] = 7
-        map_matrix[(posR_Y-1):(posR_Y+2),(posR_X-1)] = 7
-        map_matrix[posR_Y-2,posR_X] = 7
-        map_matrix[posR_Y+2,posR_X] = 7
+        map_matrix[posR_Y,(posR_X-2):(posR_X+3)] =                C_ARROW
+        map_matrix[(posR_Y-1):(posR_Y+2),(posR_X-1)] =            C_ARROW
+        map_matrix[posR_Y-2,posR_X] =                             C_ARROW
+        map_matrix[posR_Y+2,posR_X] =                             C_ARROW
         
 def add_walls():
     global map_matrix
     if(orientation == FACING_UP or orientation == FACING_DOWN):
     #walls left and right
-        map_matrix[posR_Y,posR_X-6] = 3
-        map_matrix[posR_Y,posR_X+6] = 3
+        map_matrix[posR_Y,posR_X-6] =                             C_WALLS
+        map_matrix[posR_Y,posR_X+6] =                             C_WALLS
     elif(orientation == FACING_RIGHT or orientation == FACING_LEFT):
     #walls up and down
-        map_matrix[posR_Y-6,posR_X] = 3
-        map_matrix[posR_Y+6,posR_X] = 3   
+        map_matrix[posR_Y-6,posR_X] =                             C_WALLS
+        map_matrix[posR_Y+6,posR_X] =                             C_WALLS
 
-def add_right_hole():
-    if(orientation == FACING_UP):
-        draw_hole_right()
-    elif(orientation == FACING_DOWN):
-        draw_hole_left()
-    elif(orientation == FACING_RIGHT):
-        draw_hole_down()
-    elif(orientation == FACING_LEFT):
-        draw_hole_up()
+# def add_right_hole():
+#     if(orientation == FACING_UP):
+#         draw_hole_right()
+#     elif(orientation == FACING_DOWN):
+#         draw_hole_left()
+#     elif(orientation == FACING_RIGHT):
+#         draw_hole_down()
+#     elif(orientation == FACING_LEFT):
+#         draw_hole_up()
         
-def add_left_hole():
-    if(orientation == FACING_UP):
-        draw_hole_left()
-    elif(orientation == FACING_DOWN):
-        draw_hole_right()
-    elif(orientation == FACING_RIGHT):
-        draw_hole_up()
-    elif(orientation == FACING_LEFT):
-        draw_hole_down()
+# def add_left_hole():
+#     if(orientation == FACING_UP):
+#         draw_hole_left()
+#     elif(orientation == FACING_DOWN):
+#         draw_hole_right()
+#     elif(orientation == FACING_RIGHT):
+#         draw_hole_up()
+#     elif(orientation == FACING_LEFT):
+#         draw_hole_down()
         
 def add_fire_front():
     global map_matrix
@@ -213,97 +258,98 @@ def add_fire_front():
     elif(orientation == FACING_LEFT):
         posF_X = posR_X - 11
         posF_Y = posR_Y
-    map_matrix[(posF_Y-1):(posF_Y+2),(posF_X-1):(posF_X+2)] = 4
+#     map_matrix[(posF_Y-1):(posF_Y+2),(posF_X-1):(posF_X+2)] = 4
+    draw_fire()
     
 #INTERSECTION MODELS---------------------------------------------------------------------------
 #    map_matrix[(posR_Y),(posR_X)]
 def add_T_cross_up():
     global map_matrix
-    map_matrix[(posR_Y+6),(posR_X-10):posR_X+11] = 3
-    map_matrix[(posR_Y-6),(posR_X-10):(posR_X-5)] = 3
-    map_matrix[(posR_Y-6),(posR_X+6):(posR_X+11)] = 3
-    map_matrix[(posR_Y-10):(posR_Y-5),(posR_X-6)] = 3
-    map_matrix[(posR_Y-10):(posR_Y-5),(posR_X+6)] = 3
+    map_matrix[(posR_Y+6),(posR_X-10):posR_X+11] =                C_WALLS
+    map_matrix[(posR_Y-6),(posR_X-10):(posR_X-5)] =               C_WALLS
+    map_matrix[(posR_Y-6),(posR_X+6):(posR_X+11)] =               C_WALLS
+    map_matrix[(posR_Y-10):(posR_Y-5),(posR_X-6)] =               C_WALLS
+    map_matrix[(posR_Y-10):(posR_Y-5),(posR_X+6)] =               C_WALLS
 def add_T_cross_down():
     global map_matrix
-    map_matrix[(posR_Y-6),(posR_X-10):posR_X+11] = 3
-    map_matrix[(posR_Y+6),(posR_X-10):(posR_X-5)] = 3
-    map_matrix[(posR_Y+6),(posR_X+6):(posR_X+11)] = 3
-    map_matrix[(posR_Y+6):(posR_Y+11),(posR_X-6)] = 3
-    map_matrix[(posR_Y+6):(posR_Y+11),(posR_X+6)] = 3
+    map_matrix[(posR_Y-6),(posR_X-10):posR_X+11] =                C_WALLS
+    map_matrix[(posR_Y+6),(posR_X-10):(posR_X-5)] =               C_WALLS
+    map_matrix[(posR_Y+6),(posR_X+6):(posR_X+11)] =               C_WALLS
+    map_matrix[(posR_Y+6):(posR_Y+11),(posR_X-6)] =               C_WALLS
+    map_matrix[(posR_Y+6):(posR_Y+11),(posR_X+6)] =               C_WALLS
 def add_T_cross_right():
     global map_matrix
-    map_matrix[(posR_Y-10):(posR_Y+11),(posR_X-6)] = 3
-    map_matrix[(posR_Y-10):(posR_Y-5),(posR_X+6)] = 3
-    map_matrix[(posR_Y+6):(posR_Y+11),(posR_X+6)] = 3
-    map_matrix[(posR_Y+6),(posR_X+6):(posR_X+11)] = 3
-    map_matrix[(posR_Y-6),(posR_X+6):(posR_X+11)] = 3    
+    map_matrix[(posR_Y-10):(posR_Y+11),(posR_X-6)] =              C_WALLS
+    map_matrix[(posR_Y-10):(posR_Y-5),(posR_X+6)] =               C_WALLS
+    map_matrix[(posR_Y+6):(posR_Y+11),(posR_X+6)] =               C_WALLS
+    map_matrix[(posR_Y+6),(posR_X+6):(posR_X+11)] =               C_WALLS
+    map_matrix[(posR_Y-6),(posR_X+6):(posR_X+11)] =               C_WALLS
 def add_T_cross_left():
     global map_matrix
-    map_matrix[(posR_Y-10):(posR_Y+11),(posR_X+6)] = 3
-    map_matrix[(posR_Y-10):(posR_Y-5),(posR_X-6)] = 3
-    map_matrix[(posR_Y+6):(posR_Y+11),(posR_X-6)] = 3
-    map_matrix[(posR_Y+6),(posR_X-10):(posR_X-5)] = 3
-    map_matrix[(posR_Y-6),(posR_X-10):(posR_X-5)] = 3
+    map_matrix[(posR_Y-10):(posR_Y+11),(posR_X+6)] =              C_WALLS
+    map_matrix[(posR_Y-10):(posR_Y-5),(posR_X-6)] =               C_WALLS
+    map_matrix[(posR_Y+6):(posR_Y+11),(posR_X-6)] =               C_WALLS
+    map_matrix[(posR_Y+6),(posR_X-10):(posR_X-5)] =               C_WALLS
+    map_matrix[(posR_Y-6),(posR_X-10):(posR_X-5)] =               C_WALLS
     
 def add_L_down_left_cross():
     global map_matrix
-    map_matrix[(posR_Y-6),(posR_X-10):(posR_X+7)] = 3
-    map_matrix[(posR_Y+6),(posR_X-10):(posR_X-5)] = 3   
-    map_matrix[(posR_Y-6):(posR_Y+11),(posR_X+6)] = 3
-    map_matrix[(posR_Y+6):(posR_Y+11),(posR_X-6)] = 3
+    map_matrix[(posR_Y-6),(posR_X-10):(posR_X+7)] =               C_WALLS
+    map_matrix[(posR_Y+6),(posR_X-10):(posR_X-5)] =               C_WALLS
+    map_matrix[(posR_Y-6):(posR_Y+11),(posR_X+6)] =               C_WALLS
+    map_matrix[(posR_Y+6):(posR_Y+11),(posR_X-6)] =               C_WALLS
 def add_L_down_right_cross():
     global map_matrix
-    map_matrix[(posR_Y-6),(posR_X-6):(posR_X+11)] = 3
-    map_matrix[(posR_Y+6),(posR_X+6):(posR_X+11)] = 3  
-    map_matrix[(posR_Y-6):(posR_Y+11),(posR_X-6)] = 3
-    map_matrix[(posR_Y+6):(posR_Y+11),(posR_X+6)] = 3
+    map_matrix[(posR_Y-6),(posR_X-6):(posR_X+11)] =               C_WALLS
+    map_matrix[(posR_Y+6),(posR_X+6):(posR_X+11)] =               C_WALLS
+    map_matrix[(posR_Y-6):(posR_Y+11),(posR_X-6)] =               C_WALLS
+    map_matrix[(posR_Y+6):(posR_Y+11),(posR_X+6)] =               C_WALLS
 
 def add_L_up_left_cross():
     global map_matrix
-    map_matrix[(posR_Y+6),(posR_X-10):(posR_X+7)] = 3
-    map_matrix[(posR_Y-6),(posR_X-10):(posR_X-5)] = 3   
-    map_matrix[(posR_Y-10):(posR_Y+7),(posR_X+6)] = 3
-    map_matrix[(posR_Y-10):(posR_Y-5),(posR_X-6)] = 3
+    map_matrix[(posR_Y+6),(posR_X-10):(posR_X+7)] =               C_WALLS
+    map_matrix[(posR_Y-6),(posR_X-10):(posR_X-5)] =               C_WALLS
+    map_matrix[(posR_Y-10):(posR_Y+7),(posR_X+6)] =               C_WALLS
+    map_matrix[(posR_Y-10):(posR_Y-5),(posR_X-6)] =               C_WALLS
 
 def add_L_up_right_cross():
     global map_matrix
-    map_matrix[(posR_Y+6),(posR_X-6):(posR_X+11)] = 3
-    map_matrix[(posR_Y-6),(posR_X+6):(posR_X+11)] = 3  
-    map_matrix[(posR_Y-10):(posR_Y-5),(posR_X+6)] = 3
-    map_matrix[(posR_Y-10):(posR_Y+7),(posR_X-6)] = 3
+    map_matrix[(posR_Y+6),(posR_X-6):(posR_X+11)] =               C_WALLS
+    map_matrix[(posR_Y-6),(posR_X+6):(posR_X+11)] =               C_WALLS
+    map_matrix[(posR_Y-10):(posR_Y-5),(posR_X+6)] =               C_WALLS
+    map_matrix[(posR_Y-10):(posR_Y+7),(posR_X-6)] =               C_WALLS
     
 def add_X_cross():
     global map_matrix
-    map_matrix[(posR_Y+6),(posR_X-10):(posR_X-5)] = 3  
-    map_matrix[(posR_Y+6):(posR_Y+11),(posR_X-6)] = 3
-    map_matrix[(posR_Y+6),(posR_X+6):(posR_X+11)] = 3  
-    map_matrix[(posR_Y+6):(posR_Y+11),(posR_X+6)] = 3
-    map_matrix[(posR_Y-6),(posR_X+6):(posR_X+11)] = 3  
-    map_matrix[(posR_Y-10):(posR_Y-5),(posR_X+6)] = 3
-    map_matrix[(posR_Y-6),(posR_X-10):(posR_X-5)] = 3  
-    map_matrix[(posR_Y-10):(posR_Y-5),(posR_X-6)] = 3
+    map_matrix[(posR_Y+6),(posR_X-10):(posR_X-5)] =               C_WALLS
+    map_matrix[(posR_Y+6):(posR_Y+11),(posR_X-6)] =               C_WALLS
+    map_matrix[(posR_Y+6),(posR_X+6):(posR_X+11)] =               C_WALLS
+    map_matrix[(posR_Y+6):(posR_Y+11),(posR_X+6)] =               C_WALLS
+    map_matrix[(posR_Y-6),(posR_X+6):(posR_X+11)] =               C_WALLS
+    map_matrix[(posR_Y-10):(posR_Y-5),(posR_X+6)] =               C_WALLS
+    map_matrix[(posR_Y-6),(posR_X-10):(posR_X-5)] =               C_WALLS
+    map_matrix[(posR_Y-10):(posR_Y-5),(posR_X-6)] =               C_WALLS
     
 def add_dead_end_up():
     global map_matrix
-    map_matrix[(posR_Y-6),(posR_X-6):(posR_X+7)] = 3
-    map_matrix[(posR_Y-6):(posR_Y+1),(posR_X-6)] = 3
-    map_matrix[(posR_Y-6):(posR_Y+1),(posR_X+6)] = 3
+    map_matrix[(posR_Y-6),(posR_X-6):(posR_X+7)] =                C_WALLS
+    map_matrix[(posR_Y-6):(posR_Y+1),(posR_X-6)] =                C_WALLS
+    map_matrix[(posR_Y-6):(posR_Y+1),(posR_X+6)] =                C_WALLS
 def add_dead_end_down():
     global map_matrix
-    map_matrix[(posR_Y+6),(posR_X-6):(posR_X+7)] = 3
-    map_matrix[(posR_Y):(posR_Y+7),(posR_X-6)] = 3
-    map_matrix[(posR_Y):(posR_Y+7),(posR_X+6)] = 3
+    map_matrix[(posR_Y+6),(posR_X-6):(posR_X+7)] =                C_WALLS
+    map_matrix[(posR_Y):(posR_Y+7),(posR_X-6)] =                  C_WALLS
+    map_matrix[(posR_Y):(posR_Y+7),(posR_X+6)] =                  C_WALLS
 def add_dead_end_right():
     global map_matrix
-    map_matrix[(posR_Y-6):(posR_Y+7),(posR_X+6)] = 3
-    map_matrix[(posR_Y-6),(posR_X):(posR_X+7)] = 3
-    map_matrix[(posR_Y+6),(posR_X):(posR_X+7)] = 3
+    map_matrix[(posR_Y-6):(posR_Y+7),(posR_X+6)] =                C_WALLS
+    map_matrix[(posR_Y-6),(posR_X):(posR_X+7)] =                  C_WALLS
+    map_matrix[(posR_Y+6),(posR_X):(posR_X+7)] =                  C_WALLS
 def add_dead_end_left(): 
     global map_matrix
-    map_matrix[(posR_Y-6):(posR_Y+7),(posR_X-6)] = 3
-    map_matrix[(posR_Y-6),(posR_X-6):(posR_X+1)] = 3
-    map_matrix[(posR_Y+6),(posR_X-6):(posR_X+1)] = 3
+    map_matrix[(posR_Y-6):(posR_Y+7),(posR_X-6)] =                C_WALLS
+    map_matrix[(posR_Y-6),(posR_X-6):(posR_X+1)] =                C_WALLS
+    map_matrix[(posR_Y+6),(posR_X-6):(posR_X+1)] =                C_WALLS
 
     
 def draw_crossing(data):
@@ -402,6 +448,9 @@ def update_plot_elements(data):
     elif(data == D_FIRE):
         add_fire_front()
         
+    elif(data == 19):
+        print("UNKNOWN CROSSING")
+        
     else:
         update_epuck_position(STAY)
     #print("updated")
@@ -411,17 +460,17 @@ def update_plot_elements(data):
 def clear_map():
     global map_matrix
     #empty map matrix
-    map_matrix[0:max_Y,0:max_X] = 0
+    map_matrix[0:max_Y,0:max_X] = C_VOID 
     
     #BACKGROUND
     #start background
-    map_matrix[start_Y:(start_Y+7),(start_X-5):(start_X+6)] = 2
+    map_matrix[start_Y:(start_Y+7),(start_X-5):(start_X+6)] = C_GROUND
 
     #WALLS
     #start walls
     #map_matrix[start_Y:(start_Y+7),start_X-6] = 3
     #map_matrix[start_Y:(start_Y+7),start_X+6] = 3
-    map_matrix[start_Y+6,(start_X-6):(start_X+7)] = 3
+    map_matrix[start_Y+6,(start_X-6):(start_X+7)] = C_WALLS
     
     #position offset of the e-puck (in the bottom middle)
     global posR_X
@@ -438,12 +487,13 @@ def clear_map():
 #update the plots
 def update_plot():
     if(reader_thd.need_to_update_plot()):
+
         fig.canvas.draw_idle()
+
         reader_thd.plot_updated()
 
 #function used to update the plot of the map data
 def update_map_plot(port):
-
     data_read = readUint8Serial(port)
     #print("lu")
        # map_plot.set_ydata(ir_data)
@@ -452,7 +502,7 @@ def update_map_plot(port):
     
     data = data_read
     print(data)
-    update_plot_elements(data) #uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu
+    update_plot_elements(data) 
     map_plot.set_data(map_matrix)
     fig.canvas.draw_idle()
     reader_thd.tell_to_update_plot()
@@ -615,15 +665,18 @@ reader_thd.start()
 
 #figure config-------------------------------------------------------------------------------------------------------------------------
 fig, ax = plt.subplots(num=None, figsize=(10, 9), dpi=80)
-fig.canvas.set_window_title('Map of the house')
+ax.set_xlim(0, max_X)
+ax.set_ylim(0, max_Y)
+#fig.canvas.set_window_title('Map of the house')
 plt.subplots_adjust(left=0.1, bottom=0.25)
-fig.patch.set_facecolor('cornflowerblue')
+fig.patch.set_facecolor('black')
 fig.canvas.mpl_connect('close_event', handle_close) #to detect when the window is closed and if we do a ctrl-c
+plt.gca().invert_yaxis()
 
 #cam graph config with initial plot
 graph_cam = plt.subplot(111)
 #graph_cam.set_ylim([0, max_value])
-map_reshape = map_matrix.reshape(max_X, max_Y)#uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu
+map_reshape = map_matrix.reshape(max_X, max_Y)
 map_plot = plt.imshow(map_reshape, cmap = colormap, norm = perso_norm)
 #plt.plot(np.arange(0,n,1), np.linspace(max_value, max_value, n),lw=1, color='red')
 
