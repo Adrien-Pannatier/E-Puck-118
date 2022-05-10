@@ -4,7 +4,6 @@ matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, Button, RadioButtons
 from matplotlib.offsetbox import TextArea, DrawingArea, OffsetImage, AnnotationBbox
-import matplotlib.image as mpimg
 import serial
 import struct
 import sys
@@ -74,6 +73,8 @@ L_RIGHT_CROSS = 16
 X_CROSS = 17
 
 DEAD_END = 18
+
+UNKNOWN = 19
 
 #ORIENTATIONS
 FACING_UP = 21
@@ -149,21 +150,6 @@ def draw_fire():
     map_matrix[posF_Y:(posF_Y+2),posF_X:(posF_X+2)] =             C_FIRE_YELLOW
     map_matrix[(posF_Y+2):(posF_Y+4),(posF_X-1):(posF_X+3)] =     C_FIRE_YELLOW
     map_matrix[(posF_Y-1),posF_X] =                               C_FIRE_YELLOW
-    
-    # def draw_hole_up():
-#     #background hole up
-#     map_matrix[(posR_Y-16):(posR_Y-5),(posR_X-5):(posR_X+6)] = 2
-# def draw_hole_down():
-#     #background hole down
-#     map_matrix[(posR_Y+6):(posR_Y+17),(posR_X-5):(posR_X+6)] = 2
-# def draw_hole_right():
-#     #background hole right
-#     map_matrix[(posR_Y-5):(posR_Y+6),(posR_X+6):(posR_X+17)] = 2
-# def draw_hole_left():
-#     #background hole left
-#     map_matrix[(posR_Y-5):(posR_Y+6),(posR_X-16):(posR_X-5)] = 2
-    
-    
             
 def update_epuck_position(STAY_OR_GO):
     global posR_Y
@@ -220,26 +206,6 @@ def add_walls():
     #walls up and down
         map_matrix[posR_Y-6,posR_X] =                             C_WALLS
         map_matrix[posR_Y+6,posR_X] =                             C_WALLS
-
-# def add_right_hole():
-#     if(orientation == FACING_UP):
-#         draw_hole_right()
-#     elif(orientation == FACING_DOWN):
-#         draw_hole_left()
-#     elif(orientation == FACING_RIGHT):
-#         draw_hole_down()
-#     elif(orientation == FACING_LEFT):
-#         draw_hole_up()
-        
-# def add_left_hole():
-#     if(orientation == FACING_UP):
-#         draw_hole_left()
-#     elif(orientation == FACING_DOWN):
-#         draw_hole_right()
-#     elif(orientation == FACING_RIGHT):
-#         draw_hole_up()
-#     elif(orientation == FACING_LEFT):
-#         draw_hole_down()
         
 def add_fire_front():
     global map_matrix
@@ -258,11 +224,10 @@ def add_fire_front():
     elif(orientation == FACING_LEFT):
         posF_X = posR_X - 11
         posF_Y = posR_Y
-#     map_matrix[(posF_Y-1):(posF_Y+2),(posF_X-1):(posF_X+2)] = 4
     draw_fire()
     
 #INTERSECTION MODELS---------------------------------------------------------------------------
-#    map_matrix[(posR_Y),(posR_X)]
+
 def add_T_cross_up():
     global map_matrix
     map_matrix[(posR_Y+6),(posR_X-10):posR_X+11] =                C_WALLS
@@ -423,38 +388,33 @@ def update_plot_elements(data):
     global posR_X
     global posR_Y
     global orientation
-    #print("posR_X: " +str(posR_X))
-    #print("posR_Y: " +str(posR_Y))
-    #print("orientation" +str(orientation))
+
     if(data == FACING_UP or data == FACING_DOWN or data == FACING_RIGHT or data == FACING_LEFT):
         #global orientation 
         orientation = data
         update_epuck_position(STAY)   
 
     elif(data == MOVING_IN_INTERSECTION):
+        update_epuck_position(GO)        
         update_epuck_position(GO)
-        update_epuck_position(GO)
-        #print("g")
+        
     elif(data == CORRIDOR):
         update_epuck_position(GO)
         add_walls()
         update_epuck_position(GO)
         add_walls()
-
-    elif(data == T_CROSS_RL or data == T_CROSS_UR or data == T_CROSS_UL or data == L_LEFT_CROSS or data == L_RIGHT_CROSS or data == X_CROSS or          data == DEAD_END):
-        print("CROSSING")
+        
+    elif(data == T_CROSS_RL or data == T_CROSS_UR or data == T_CROSS_UL or data == L_LEFT_CROSS or data == L_RIGHT_CROSS or data == X_CROSS or data == DEAD_END):
         draw_crossing(data)
 
     elif(data == D_FIRE):
         add_fire_front()
         
-    elif(data == 19):
-        print("UNKNOWN CROSSING")
+    elif(data == UNKNOWN):
+        print("UNKNOWN")
         
     else:
         update_epuck_position(STAY)
-    #print("updated")
-    #print(" ")
 
 #------------------------------------------------------------------------------------------------
 def clear_map():
@@ -495,11 +455,6 @@ def update_plot():
 #function used to update the plot of the map data
 def update_map_plot(port):
     data_read = readUint8Serial(port)
-    #print("lu")
-       # map_plot.set_ydata(ir_data)
-       # graph_cam.relim()
-       # graph_cam.autoscale()
-    
     data = data_read
     print(data)
     update_plot_elements(data) 
@@ -556,34 +511,10 @@ def readUint8Serial(port):
                 state = 1
             else:
                 state = 0
-    #print("start")
-    #reads the size
-    #converts as short int in little endian the two bytes read
-    #size = struct.unpack('<h',port.read(2)) 
-    #removes the second element which is void
-    #size = size[0]  
-    #print("size")
-    #print(size)
-    #reads the data
+
     rcv_buffer = port.read(2)
     data_read = 0
-    print(rcv_buffer)
-    
-    #if we receive the good amount of data, we convert them in uint8
-    #if(len(rcv_buffer) == 2):
-        #print("in if")
-        #data_read = rcv_buffer[0]
-        #print(rcv_buffer[0])
-    #    i = 0
-     #   while(i < size):
-      #      data_tab.append(struct.unpack_from('<I',rcv_buffer, i))
-       #     i = i+1
 
-       # print('received !')
-       # return data_read
-    #else:
-        #print('Timout...')
-        #return []
     data_read = rcv_buffer[0]
     print('received !')
     return data_read    
@@ -623,11 +554,12 @@ class serial_thread(Thread):
             #refresh_map()
 
     #enables the continuous reading
-    def setContReceive(self, val):  
+    def setContReceive(self, val): 
         self.contReceive = True
 
     #disables the continuous reading
     def stop_reading(self, val):
+        print("stopped reading")
         self.contReceive = False
 
     #tell the plot need to be updated
@@ -687,6 +619,7 @@ timer.add_callback(update_plot)
 timer.start()
 
 def handle_clear(val):
+    print("cleared")
     clear_map()
     map_plot.set_data(map_matrix)
     fig.canvas.draw_idle()
