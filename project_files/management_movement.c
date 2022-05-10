@@ -2,7 +2,7 @@
  * management_movement.c
  *
  *  Created on: 15 avr. 2022
- *      Author: Axel Praplan, Adrien Pannatier
+ *      Authors: Axel Praplan, Adrien Pannatier
  *
  *  Functions and defines to manage the state of the robot and the
  *  way it moves and interacts with its surroundings
@@ -86,19 +86,97 @@ const float incr = 0.05;
 //ooooooooooooooooooooooooooooooooooooooooooooooooooo
 
 //Private functions
+
+/**
+ * @brief 			Check for a side opening
+ *
+ * @retval true		if there is an opening on at least one side.
+ * @retval false	if there is no opening on both sides.
+ */
 bool opening_found(void);
+
+/**
+ * @brief 			Check for a dead end
+ *
+ * @retval true		if the forward path is obstructed.
+ * @retval false	if there is no obstruction in front.
+ */
 bool dead_end_found(void);
+
+/**
+ * @brief 			Check for a corridor
+ *
+ * @retval true		if a corridor is found around.
+ * @retval false	if there is no corridor detected.
+ */
 bool corridor_found(void);
+
+/**
+ * @brief	stop the robot moving
+ *
+ */
 void stop_movement(void);
+
+/**
+ * @brief 	Use a PD regulator to follow a corridor and check for opening or dead end
+ *
+ */
 void followind_corridor(void);
+
+/**
+ * @brief	Moves towards to the middle of the intersection
+ *
+ */
 void moving_in_intersection(void);
+
+/**
+ * @brief	Update the orientation in memory and send the communication for the drawing
+ *
+ * @param rotation_angle     angle of rotation in deg.
+ */
 void update_orientation(int rotation_angle);
+
+/**
+ * @brief	Rotate the robot and stop the movement when the desired angle is reached
+ *
+ * @param rotation_angle     angle of rotation in deg.
+ */
 void rotate(int rotation_angle);
+
+/**
+ * @brief 	analysis of the intersection and the different openings
+ *
+ */
 void analysing_intersection(void);
+
+/**
+ * @brief 	Leave the intersection, chose the right path and go straight ahead until a corridor is detected
+ *
+ */
 void join_corridor(void);
+
+/**
+ * @brief 	Turn to follow the right wall
+ *
+ */
 void turn_towards_path(void);
+
+/**
+ * @brief 	Takes measures against the fire and checks whether the fire has been brought under control
+ *
+ */
 void fighting_fire(void);
+
+/**
+ * @brief 	Rotates to all openings and performs fire detection
+ *
+ */
 void searching_for_fire(void);
+
+/**
+ * @brief 	Restoring the previously saved orientation
+ *
+ */
 void reseting_orientation(void);
 
 //Thread of motion management
@@ -218,10 +296,7 @@ void PID_tuning(void){
 
 /***************************INTERNAL FUNCTIONS************************************/
 
-/**
- * @brief 			stop the robot moving
- *
- */
+
 void stop_movement(void){
 
 	//Set sero speed
@@ -229,12 +304,6 @@ void stop_movement(void){
 	left_motor_set_speed(ZERO_SPEED);
 }
 
-/**
- * @brief 			Check for a side opening
- *
- * @retval true		if there is an opening on at least one side.
- * @retval false	if there is no opening on both sides.
- */
 bool opening_found(void){
 
 	//if opening detected return true
@@ -245,12 +314,6 @@ bool opening_found(void){
 	return false;
 }
 
-/**
- * @brief 			Check for a dead end
- *
- * @retval true		if the forward path is obstructed.
- * @retval false	if there is no obstruction in front.
- */
 bool dead_end_found(void){
 
 	static uint8_t certainty_counter = 0;
@@ -273,10 +336,6 @@ bool dead_end_found(void){
 	return false;
 }
 
-/**
- * @brief 			Use a PD regulator to follow a corridor and check for opening or dead end
- *
- */
 void followind_corridor(void){
 
 	//Variables PD
@@ -329,12 +388,6 @@ void followind_corridor(void){
 	}
 }
 
-/**
- * @brief 			Check for a corridor
- *
- * @retval true		if a corridor is found around.
- * @retval false	if there is no corridor detected.
- */
 bool corridor_found(void){
 
 	//Counter to avoid noise
@@ -380,10 +433,6 @@ bool corridor_found(void){
 //	return NOT_COMPLETE;
 //}
 
-/**
- * @brief 			Moves towards to the middle of the intersection
- *
- */
 void moving_in_intersection(void){
 
 	//Reset the right motor counter for position
@@ -425,11 +474,6 @@ void moving_in_intersection(void){
 	}
 }
 
-/**
- * @brief			Update the orientation in memory and send the communication for the drawing
- *
- * @param rotation_angle     angle of rotation in deg.
- */
 void update_orientation(int rotation_angle){
 
 	orientation = orientation + rotation_angle;
@@ -443,11 +487,6 @@ void update_orientation(int rotation_angle){
 
 }
 
-/**
- * @brief			Rotate the robot and stop the movement when the desired angle is reached
- *
- * @param rotation_angle     angle of rotation in deg.
- */
 void rotate(int rotation_angle){
 
 	int32_t right_motor_pos;
@@ -484,10 +523,6 @@ void rotate(int rotation_angle){
 	chThdSleepMilliseconds(20);
 }
 
-/**
- * @brief 			analysis of the intersection and the different openings
- *
- */
 void analysing_intersection(void){
 
 	//Store orientation before moving
@@ -514,10 +549,6 @@ void analysing_intersection(void){
 	movement_state = SEARCHING_FIRE;
 }
 
-/**
- * @brief 			Leave the intersection, chose the right path and go straight ahead until a corridor is detected
- *
- */
 void join_corridor(void){
 
 	//Take the right path
@@ -563,10 +594,6 @@ void join_corridor(void){
 //			clear_leds();
 }
 
-/**
- * @brief 			Turn to follow the right wall
- *
- */
 void turn_towards_path(void){
 	if(opening_right)			rotate(RIGHT_90);
 	else if (opening_front)		return;
@@ -574,10 +601,6 @@ void turn_towards_path(void){
 	else if (!opening_front && !opening_right && !opening_left) rotate(LEFT_180);
 }
 
-/**
- * @brief 			Rotates to all openings and performs fire detection
- *
- */
 void searching_for_fire(void){
 	send_crossing(opening_right, opening_front, opening_left);
 	chThdSleepMilliseconds(20);
@@ -630,10 +653,6 @@ void searching_for_fire(void){
 	movement_state = LEAVING_INTERSECTION;
 }
 
-/**
- * @brief 			Takes measures against the fire and checks whether the fire has been brought under control
- *
- */
 void fighting_fire(void){
 
 	//Fight against fire
@@ -646,10 +665,6 @@ void fighting_fire(void){
 
 }
 
-/**
- * @brief 			Restoring the previously saved orientation
- *
- */
 void reseting_orientation(void){
 
 	//NORTH = 0, EAST = 90, SOUTH = 180, WEST = 270

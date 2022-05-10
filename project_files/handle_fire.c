@@ -2,7 +2,7 @@
  * handle_fire.c
  *
  *  Created on: 21 avr. 2022
- *      Author: AdrienPannatier
+ *      Author: Axel Praplan, Adrien Pannatier
  *
  *  Functions to control the alarm and the air blower module
  */
@@ -11,6 +11,8 @@
 #include "leds.h"
 #include "process_image.h"
 #include "added_melodies.h"
+
+/**************************PUBLIC FUNCTIONS***********************************/
 
 bool check_for_fire(void){
 	//turns on the camera, check then turns of
@@ -29,7 +31,7 @@ bool check_for_fire(void){
 void deploy_antifire_measures(void){
 	//activates the front led pin which turns on the air blower
 	set_front_led(1);
-//turns on the siren
+	//turns on the siren
 	playAddedAlarm(BASEBALL,ML_SIMPLE_PLAY);
 }
 
@@ -40,26 +42,4 @@ void stop_antifire_measures(void){
 	//stopCurrentMelody();
 }
 
-//bool wiggle(void){
-//	static bool rotation_R = false;
-//	static bool rotation_L = false;
-//	static bool return_to_centre = false;
-//	if(rotation_R == false && rotation_L == false && return_to_centre == false){
-//		rotation_R = rotate(10);
-//		return false;
-//	}
-//	else if(rotation_R == true && rotation_L == false && return_to_centre == false){
-//		rotation_L = rotate(-20);
-//		return false;
-//	}
-//	else if(rotation_R == true && rotation_L == true && return_to_centre == false){
-//		return_to_centre = rotate(10);
-//		return false;
-//	}
-//	else if(rotation_R == true && rotation_L == true && return_to_centre == true){
-//		return_to_centre = false;
-//		rotation_R = false;
-//		rotation_L = false;
-//		return true;
-//	}
-//}
+/**************************END PUBLIC FUNCTIONS***********************************/

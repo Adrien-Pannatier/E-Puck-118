@@ -1,3 +1,14 @@
+/*
+ * process_image.c
+ *
+ *  Created on: 18 avr. 2022
+ *      Authors: Axel Praplan, Adrien Pannatier
+ *
+ *  Thread and function to read images and detect high intensity peak
+ *
+ *  Inspired by the TP file
+ */
+
 #include "ch.h"
 #include "hal.h"
 #include <chprintf.h>

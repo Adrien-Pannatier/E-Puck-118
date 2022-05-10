@@ -2,11 +2,12 @@
  * light_gestion.c
  *
  *  Created on: 12 avr. 2022
- *      Author: APrap
+ *      Authors: Axel Praplan, Adrien Pannatier
  *
  *  Thread declaration and defines for LED responses depending on
  *  the state of the robot
  */
+
 #include "light_gestion.h"
 #include "ch.h"
 #include "hal.h"
@@ -103,6 +104,10 @@ static THD_FUNCTION(ThdLED, arg) {
     }
 }
 
+/**************************PUBLIC FUNCTIONS***********************************/
+
 void LED_start(void){
 	chThdCreateStatic(waThdLED, sizeof(waThdLED), NORMALPRIO -1, ThdLED, NULL);
 }
+
+/**************************END PUBLIC FUNCTIONS***********************************/

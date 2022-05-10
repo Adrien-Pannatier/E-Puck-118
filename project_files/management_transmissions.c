@@ -2,7 +2,10 @@
  * management_transmissions.c
  *
  *  Created on: 18 avr. 2022
- *      Author: APrap
+ *      Authors: Axel Praplan, Adrien Pannatier
+ *
+ *  Thread and buffer to send labyrinth info to the computer
+ *  via bluetooth
  */
 
 //defines used for transmission
