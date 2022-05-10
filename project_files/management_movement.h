@@ -15,13 +15,13 @@
 #include "hal.h"
 
 //Moving state
-#define STOP							0												//No movement
-#define MOVING							1												//Following a corridor
-#define REACHING_INTERSECTION			2												//Reaching the middle of an intersection
-#define ROTATING						3												//Choosing the next path and rotating in the intersection
-#define LEAVING_INTERSECTION			4												//Regaining the corridor
-#define FIRE_FIGHTING					5												//Taking actions against fire
-#define SEARCHING_FIRE					6												//searching if fire
+#define STOP							0										//No movement
+#define MOVING							1										//Following a corridor
+#define REACHING_INTERSECTION			2										//Reaching the middle of an intersection
+#define ROTATING						3										//Choosing the next path and rotating in the intersection
+#define LEAVING_INTERSECTION			4										//Regaining the corridor
+#define SEARCHING_FIRE					5										//Searching for fire around
+#define FIRE_FIGHTING					6										//Taking actions against fire
 
 #define NORTH							0
 #define EAST							90
@@ -56,5 +56,11 @@ uint8_t get_movement_state(void);
  */
 uint8_t get_orientation(void);
 
+/**
+ * @brief			Set the movement state
+ *
+ * @param state_to_set     Movement state to set defined in management_movement.h.
+ */
+void set_movement_state(uint8_t state_to_set);
 
 #endif /* MANAGEMENT_MOVEMENT_H_ */

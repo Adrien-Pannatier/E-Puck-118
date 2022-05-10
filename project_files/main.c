@@ -1,38 +1,41 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "stdio.h"
+#include "stdlib.h"
+#include "string.h"
 
+#include "main.h"
 #include "ch.h"
 #include "hal.h"
-#include "spi_comm.h"
+#include "selector.h"
 #include "memory_protection.h"
-#include <main.h>
-#include <motors.h>
-#include <audio/microphone.h>
-#include <leds.h>
 
-#include <msgbus/messagebus.h>
-#include <audio/audio_thread.h>
-#include <audio/play_melody.h>
-#include <sensors/proximity.h>
-#include <added_melodies.h>
-#include "chmtx.h"
-#include "light_gestion.h"
-#include "audio/audio_thread.h"
-#include "management_proximity.h"
-#include "management_movement.h"
-#include "management_transmissions.h"
-#include "usbcfg.h"
 #include "spi_comm.h"
+//#include "leds.h"
+#include "light_gestion.h"
 
-#include <process_image.h>
-#include <camera/po8030.h>
+
+#include "audio/microphone.h"
+#include "audio/audio_thread.h"
+#include "audio/play_melody.h"
+#include "added_melodies.h"
+
+#include "process_image.h"
+#include "camera/po8030.h"
+
+#include "chmtx.h"
+#include "msgbus/messagebus.h"
+#include "sensors/proximity.h"
+#include "management_proximity.h"
+
+#include "usbcfg.h"
+#include "management_transmissions.h"
+
+#include "motors.h"
+#include "management_movement.h"
 
 messagebus_t bus;
 MUTEX_DECL(bus_lock);
 CONDVAR_DECL(bus_condvar);
 
-//DEV
 static void serial_start(void)
 {
 	static SerialConfig ser_cfg = {
@@ -47,36 +50,34 @@ static void serial_start(void)
 
 int main(void)
 {
-	//Systeme
+	//System
     halInit();
     chSysInit();
     mpu_init();
 
     //LED
-//    spi_comm_start();
-    LED_start();
+    //spi_comm_start();
+    //LED_start();
 
+    //Music
     dac_start();
     playMelodyStart();
+    playAddedAlarmStart();
 
     //Camera
     dcmi_start();
     po8030_start();
     process_image_start();
 
-    playAddedAlarmStart();
-
     //IR
     messagebus_init(&bus, &bus_lock, &bus_condvar);
     proximity_start();
     management_proximity_start();
 
-    //DEV
+    //Transmission
     usb_start();
     serial_start();
-
-    //Transmission
-    //management_transmissions_start();
+    management_transmissions_start();
 
     //Movement
     motors_init();
@@ -85,8 +86,17 @@ int main(void)
     /* Infinite loop. */
     while (1) {
 
-    	chThdSleepMilliseconds(500);
+    	//Selector control
+    	switch (get_selector())
+    	{
+			case 0:  set_movement_state(STOP);	break;
 
+			case 1: if(get_movement_state() == STOP) set_movement_state(LEAVING_INTERSECTION); break;
+
+			default: set_movement_state(STOP);	break;
+    	}
+
+    	chThdSleepMilliseconds(50);
     }
 }
 

@@ -2,7 +2,7 @@
  * management_movement.c
  *
  *  Created on: 15 avr. 2022
- *      Author: APrap
+ *      Author: Axel Praplan, Adrien Pannatier
  *
  *  Functions and defines to manage the state of the robot and the
  *  way it moves and interacts with its surroundings
@@ -15,6 +15,7 @@
 #include "management_proximity.h"
 #include "management_transmissions.h"
 #include "handle_fire.h"
+#include "stdlib.h"
 
 //provisoir pour debug
 #include "leds.h"
@@ -27,16 +28,16 @@
 
 //Moving parameters
 #define CERTAINTY						3												//minimum occurrence of a measure to have a good confidence
-#define NULL_POS						0												//Reset position zero compteur moteur
+#define NULL_POS						0												//Position zero for motor counter
 #define R_EPUCK							3.5												//[cm]
-#define MAZE_WIDTH						10.0											//[cm]
+#define MAZE_WIDTH						12.0											//[cm]
 #define NSTEP_ONE_TURN   				1000 											//number of step for 1 turn of the motor
-#define WHEEL_PERIMETER     			13.0 												//[cm]
+#define WHEEL_PERIMETER     			13.0 											//[cm]
 #define SPEED							4.0												//[cm/s]
-#define SPEED_STEP						(SPEED*NSTEP_ONE_TURN/WHEEL_PERIMETER)			//[step/s] ()
-#define ROTATIONAL_SPEED				280
+#define SPEED_STEP						(SPEED*NSTEP_ONE_TURN/WHEEL_PERIMETER)			//[step/s]
+#define ROTATIONAL_SPEED				280												//[step]
 #define STEP_TO_REACH_THE_MIDDLE		320											 	//[step]
-#define SPEED_NUL						0
+#define ZERO_SPEED						0												//[step]
 #define HISTORY_SIZE					40												//Size of navigation history buffer (store history of movements)
 
 //Angle related
@@ -61,12 +62,15 @@
 #define VL53L0X_OPENING					120												//distance considered for opening [mm]
 #define VL53L0X_OBSTRUCTED				70												//distance considered for obstructed [mm]
 
-//Static variables accessible from outside
-static uint8_t movement_state = STOP;
-static int16_t orientation = NORTH;
+//Private variables
 static int16_t orientation_before_check = NORTH;
+static int16_t desired_orientation = NORTH;
 static bool fire_detected = false;
 static bool opening_right = false, opening_left = false, opening_front = true;
+
+//Public variables
+static uint8_t movement_state = STOP;
+static int16_t orientation = NORTH;
 
 //Store history of navigation
 //static int16_t buffer_navigation_history[HISTORY_SIZE];
@@ -81,7 +85,7 @@ const float incr = 0.05;
 
 //ooooooooooooooooooooooooooooooooooooooooooooooooooo
 
-//Functions
+//Private functions
 bool opening_found(void);
 bool dead_end_found(void);
 bool corridor_found(void);
@@ -97,7 +101,7 @@ void fighting_fire(void);
 void searching_for_fire(void);
 void reseting_orientation(void);
 
-//Thd gestion movement of the robot
+//Thread of motion management
 
 static THD_WORKING_AREA(waThdMovement, 512);
 static THD_FUNCTION(Movement, arg) {
@@ -105,38 +109,24 @@ static THD_FUNCTION(Movement, arg) {
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
 
-    //Thread motors init
 //    systime_t time;
 
     while(1){
 
 //    	time = chVTGetSystemTime();
 
-    	//chprintf((BaseSequentialStream *)&SD3, "Thd time = %d\n", thd_time);
-
-    	//PID_tuning();
-
-    	//Selector control
-    	if(get_selector() == 0){
-    		orientation = NORTH;
-    		opening_right = false;
-    		opening_left = false;
-    		opening_front = true;
-        	//if(check_for_fire()) deploy_antifire_measures();
-        	//else stop_antifire_measures();
-
-    		movement_state = STOP;
-    	}
-    	else if(movement_state == STOP){
-    		chThdSleepMilliseconds(500);
-    		movement_state = LEAVING_INTERSECTION;
-    	}
-
+    	//call of all motion-related functions based on the current state of the robot
 
     	switch(movement_state){
 
 
-       	case STOP: 					stop_movement(); break;
+       	case STOP: 					stop_movement();
+//									opening_right = false;
+//									opening_left = false;
+//									opening_front = true;
+//									if(check_for_fire()) deploy_antifire_measures();
+//									else stop_antifire_measures();
+       								break;
 
 
     	case MOVING: 				followind_corridor(); break;
@@ -147,7 +137,6 @@ static THD_FUNCTION(Movement, arg) {
 
     	case ROTATING: 				analysing_intersection(); break;
 
-
     	case LEAVING_INTERSECTION: 	join_corridor(); break;
 
     	case SEARCHING_FIRE:		searching_for_fire(); break;
@@ -156,8 +145,8 @@ static THD_FUNCTION(Movement, arg) {
 
     	default: 					movement_state = STOP; break;
     	}
-//
-//    	if(get_selector() == 0) chprintf((BaseSequentialStream *)&SD3, "Thd time = %d\n\n\r", chVTGetSystemTime()-time);
+
+//    	chprintf((BaseSequentialStream *)&SD3, "Thd time = %d\n\n\r", chVTGetSystemTime()-time);
 
     	chThdSleepMilliseconds(50);
     }
@@ -165,6 +154,11 @@ static THD_FUNCTION(Movement, arg) {
 
 //DEV
 //ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+
+int16_t absolute_value_int16(int16_t value){
+	if(value < 0) value = -value;
+	return value;
+}
 
 int32_t absolute_value_int32(int32_t value){
 	if(value < 0) value = -value;
@@ -195,10 +189,6 @@ int infinity_selector(void){
 	}
 	return(0);
 }
-int16_t absolute_value_int16(int16_t value){
-	if(value < 0) value = -value;
-	return value;
-}
 
 void PID_tuning(void){
 	static int state = 0;
@@ -226,31 +216,28 @@ void PID_tuning(void){
 //oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
 
-//Access functions
+/***************************INTERNAL FUNCTIONS************************************/
 
-bool get_fire_detected(void){
-	return fire_detected;
-}
-
-uint8_t get_movement_state(void){
-	return movement_state;
-}
-
-uint8_t get_orientation(void){
-	return orientation;
-}
-
-
-//Movement related functions
-
+/**
+ * @brief 			stop the robot moving
+ *
+ */
 void stop_movement(void){
-	right_motor_set_speed(SPEED_NUL);
-	left_motor_set_speed(SPEED_NUL);
+
+	//Set sero speed
+	right_motor_set_speed(ZERO_SPEED);
+	left_motor_set_speed(ZERO_SPEED);
 }
 
+/**
+ * @brief 			Check for a side opening
+ *
+ * @retval true		if there is an opening on at least one side.
+ * @retval false	if there is no opening on both sides.
+ */
 bool opening_found(void){
 
-	//if opening detected
+	//if opening detected return true
 	if(get_calibrated_prox(IR3) < NOISE_IR || get_calibrated_prox(IR6) < NOISE_IR)
 	{
 		return true;
@@ -258,11 +245,17 @@ bool opening_found(void){
 	return false;
 }
 
+/**
+ * @brief 			Check for a dead end
+ *
+ * @retval true		if the forward path is obstructed.
+ * @retval false	if there is no obstruction in front.
+ */
 bool dead_end_found(void){
 
 	static uint8_t certainty_counter = 0;
 
-	//if front is obstructed return complete
+	//if front is obstructed return true
 
 	if(VL53L0X_get_dist_mm() <= VL53L0X_OBSTRUCTED)
 	{
@@ -271,7 +264,8 @@ bool dead_end_found(void){
 			certainty_counter = 0;
 			return true;
 		}
-		//counter to avoid noise
+
+		//Counter to avoid noise
 		certainty_counter++;
 	}
 	else if(VL53L0X_get_dist_mm() >= VL53L0X_OPENING) certainty_counter = 0;
@@ -279,9 +273,10 @@ bool dead_end_found(void){
 	return false;
 }
 
-
-//Use a PD regulator to follow a corridor and check for opening or dead end
-
+/**
+ * @brief 			Use a PD regulator to follow a corridor and check for opening or dead end
+ *
+ */
 void followind_corridor(void){
 
 	//Variables PD
@@ -292,7 +287,7 @@ void followind_corridor(void){
 	//Reset counter left motor for mapping
 	left_motor_set_pos(NULL_POS);
 
-	while(1){
+	while(movement_state != STOP){
 
 		//PD
 		error = get_calibrated_prox(IR3) - get_calibrated_prox(IR6);
@@ -301,7 +296,7 @@ void followind_corridor(void){
 		correction = Kp_tun * error + Kd_tun * (error - past_error);
 		past_error = error;
 
-		//Smoother
+		//Smoother to limit  the speed of rotations
 		if(correction > ROTATIONAL_SPEED) correction = ROTATIONAL_SPEED;
 		else if(correction < -ROTATIONAL_SPEED) correction = -ROTATIONAL_SPEED;
 
@@ -334,10 +329,18 @@ void followind_corridor(void){
 	}
 }
 
+/**
+ * @brief 			Check for a corridor
+ *
+ * @retval true		if a corridor is found around.
+ * @retval false	if there is no corridor detected.
+ */
 bool corridor_found(void){
 
+	//Counter to avoid noise
 	static uint8_t certainty_counter = 0;
 
+	//If wall found on both sides
 	if(get_calibrated_prox(IR3) >= NOISE_IR && get_calibrated_prox(IR6) >= NOISE_IR )
 //			 && get_calibrated_prox(IR2) >= NOISE_IR && get_calibrated_prox(IR7) >= NOISE_IR)
 		{
@@ -353,6 +356,10 @@ bool corridor_found(void){
 	return false;
 }
 
+/**
+ * @brief 			Performs the reverse of the last movements made by the robot in case of incorrect movement
+ *
+ */
 //bool trajectory_correction(void){
 //
 //	static uint8_t counter = 0;
@@ -373,6 +380,10 @@ bool corridor_found(void){
 //	return NOT_COMPLETE;
 //}
 
+/**
+ * @brief 			Moves towards to the middle of the intersection
+ *
+ */
 void moving_in_intersection(void){
 
 	//Reset the right motor counter for position
@@ -388,7 +399,7 @@ void moving_in_intersection(void){
 	right_motor_set_speed(SPEED_STEP);
 	left_motor_set_speed(SPEED_STEP);
 
-	while(1){
+	while(movement_state != STOP){
 
 		//Send movement for transmission every 1cm
 		if(left_motor_get_pos() >= (NSTEP_ONE_TURN / WHEEL_PERIMETER)){
@@ -414,19 +425,29 @@ void moving_in_intersection(void){
 	}
 }
 
+/**
+ * @brief			Update the orientation in memory and send the communication for the drawing
+ *
+ * @param rotation_angle     angle of rotation in deg.
+ */
 void update_orientation(int rotation_angle){
 
 	orientation = orientation + rotation_angle;
 
-	//Modulo 2pi
+	//Modulo 360°
 	if(orientation >= MAX_ANGLE) orientation -= MAX_ANGLE;
 	else if(orientation < MIN_ANGLE) orientation += MAX_ANGLE;
 
-	//Send update to buffer
+	//Send new orientation for mapping
 	send_orientation(orientation);
 
 }
 
+/**
+ * @brief			Rotate the robot and stop the movement when the desired angle is reached
+ *
+ * @param rotation_angle     angle of rotation in deg.
+ */
 void rotate(int rotation_angle){
 
 	int32_t right_motor_pos;
@@ -462,6 +483,10 @@ void rotate(int rotation_angle){
 	update_orientation(rotation_angle);
 }
 
+/**
+ * @brief 			analysis of the intersection and the different openings
+ *
+ */
 void analysing_intersection(void){
 
 	//Store orientation before moving
@@ -481,18 +506,23 @@ void analysing_intersection(void){
 //		set_led(LED7, 1);
 	}
 
-//	Send for mapping
+	//Send crossing for mapping
 	send_crossing(opening_right, opening_front, opening_left);
 
 	//Changing movement state
 	movement_state = SEARCHING_FIRE;
 }
 
+/**
+ * @brief 			Leave the intersection, chose the right path and go straight ahead until a corridor is detected
+ *
+ */
 void join_corridor(void){
 
-	//take the right path
+	//Turn to the right direction
 	turn_towards_path();
-	//reset opening bool
+
+	//reset opening booleans
 	opening_front = false;
 	opening_left = false;
 	opening_right = false;
@@ -504,7 +534,7 @@ void join_corridor(void){
 	//Reset counter for mapping
 	left_motor_set_pos(NULL_POS);
 
-	while(1){
+	while(movement_state != STOP){
 
 		//Send movement for transmission every 1cm
 		if(left_motor_get_pos() >= (NSTEP_ONE_TURN / WHEEL_PERIMETER)){
@@ -531,67 +561,80 @@ void join_corridor(void){
 //			clear_leds();
 }
 
-void turn_towards_path(void){
-	if(opening_right)			rotate(RIGHT_90);
-	else if (opening_front)		return;
-	else if (opening_left) 		rotate(LEFT_90);
-	else if (!opening_front && !opening_right && !opening_left) rotate(LEFT_180);
+/**
+ * @brief 			Chose the right direction (follow right wall)
+ *
+ */
+void choosing_direction(void){
+	if(opening_right)			desired_orientation = orientation_before_check + RIGHT_90;
+	else if (opening_front)		desired_orientation = orientation_before_check;
+	else if (opening_left) 		desired_orientation = orientation_before_check + LEFT_90;
+	else if (!opening_front && !opening_right && !opening_left) desired_orientation = orientation_before_check + LEFT_180;
+
+	//Modulo 360°
+	if(desired_orientation >= MAX_ANGLE) desired_orientation -= MAX_ANGLE;
+	else if(desired_orientation < MIN_ANGLE) desired_orientation += MAX_ANGLE;
 }
 
+/**
+ * @brief 			Rotates to all openings and performs fire detection
+ *
+ */
 void searching_for_fire(void){
 
-	//remettre l'orientation de baseooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-
-
-	//checking front
+	//Checking front
 	if(check_for_fire()){
 
-		//fire procedure
+		//Fire procedure
 		opening_front = false;
 		movement_state = FIRE_FIGHTING;
 		return;
 	}
 
+	//Checking left
 	if(opening_left){
 		rotate(LEFT_90);
 		if(check_for_fire()){
-			//fire procedure
+
+			//Fire procedure
 			opening_left = false;
 			movement_state = FIRE_FIGHTING;
 			return;
 		}
+		//Checking right (after left)
 		if(opening_right){
 			rotate(RIGHT_180);
 			if(check_for_fire()){
 
-				//fire procedure
+				//Fire procedure
 				opening_right = false;
 				movement_state = FIRE_FIGHTING;
 				return;
 			}
 		}
 	}
+	//Checking right
 	else if(opening_right){
 		rotate(RIGHT_90);
 		if(check_for_fire()){
 
-			//fire procedure
+			//Fire procedure
 			opening_right = false;
 			movement_state = FIRE_FIGHTING;
 			return;
 		}
 	}
-	//If dead end
-	//else if(!opening_front) rotate(RIGHT_180);
-
-	//orientation reset after firecheck
-	reseting_orientation();
 
 	movement_state = LEAVING_INTERSECTION;
 }
 
+/**
+ * @brief 			Takes measures against the fire and checks whether the fire has been brought under control
+ *
+ */
 void fighting_fire(void){
 
+	//Fight against fire
 	deploy_antifire_measures();
 	chThdSleepMilliseconds(1000);
 	stop_antifire_measures();
@@ -600,44 +643,46 @@ void fighting_fire(void){
 
 }
 
-void reseting_orientation(void){
+/**
+ * @brief 			Turn into the right direction to follow the maze
+ *
+ */
+void turn_towards_path(void){
 
-	//NORTH = 0, EAST = 90, SOUth = 180, WEST = 270
-	switch(orientation){
-		case NORTH: 	switch(orientation_before_check){
-							case	NORTH: 	break;
-							case	EAST:	rotate(RIGHT_90); break;
-							case	SOUTH:	rotate(LEFT_180); break;
-							case	WEST: 	rotate(LEFT_90); break;
-							default		:	break;
-		}break;
-		case EAST: 		switch(orientation_before_check){
-							case	NORTH: 	rotate(LEFT_90); break;
-							case	EAST:	break;
-							case	SOUTH:	rotate(RIGHT_90); break;
-							case	WEST: 	rotate(RIGHT_180); break;
-							default		:	break;
-		}break;
-		case SOUTH: 	switch(orientation_before_check){
-							case	NORTH: 	rotate(LEFT_180); break;
-							case	EAST:	rotate(LEFT_90); break;
-							case	SOUTH:	break;
-							case	WEST: 	rotate(RIGHT_90); break;
-							default		:	break;
-		}break;
-		case WEST: 		switch(orientation_before_check){
-							case	NORTH: 	rotate(RIGHT_90); break;
-							case	EAST:	rotate(RIGHT_180); break;
-							case	SOUTH:	rotate(LEFT_90); break;
-							case	WEST: 	break;
-							default		:	break;
-		}break;
-		default: 		break;
+	//Choose the right direction
+	choosing_direction();
+
+	//Turn in the right direction until the right orientation is reached
+	while(orientation != desired_orientation)
+	{
+			if(absolute_value_int16(desired_orientation - orientation) <= absolute_value_int16(desired_orientation - orientation - MAX_ANGLE)) rotate(RIGHT_90);
+			else rotate(LEFT_90);
 	}
-	orientation_before_check = NULL_POS;
+}
+
+/*************************END INTERNAL FUNCTIONS**********************************/
+
+
+/****************************PUBLIC FUNCTIONS*************************************/
+
+bool get_fire_detected(void){
+	return fire_detected;
+}
+
+uint8_t get_movement_state(void){
+	return movement_state;
+}
+
+uint8_t get_orientation(void){
+	return orientation;
+}
+
+void set_movement_state(uint8_t state_to_set){
+	movement_state = state_to_set;
 }
 
 void management_movement_start(void){
 	chThdCreateStatic(waThdMovement, sizeof(waThdMovement), NORMALPRIO, Movement, NULL);
 }
 
+/**************************END PUBLIC FUNCTIONS***********************************/
