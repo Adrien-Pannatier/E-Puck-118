@@ -648,7 +648,7 @@ void searching_for_fire(void){
 			//Fire procedure
 			opening_left = false;
 			movement_state = FIRE_FIGHTING;
-			return;
+			fighting_fire();
 		}
 		//Checking right (after left)
 		if(opening_right){
@@ -658,7 +658,7 @@ void searching_for_fire(void){
 				//Fire procedure
 				opening_right = false;
 				movement_state = FIRE_FIGHTING;
-				return;
+				fighting_fire();
 			}
 		}
 	}
@@ -670,7 +670,7 @@ void searching_for_fire(void){
 			//Fire procedure
 			opening_right = false;
 			movement_state = FIRE_FIGHTING;
-			return;
+			fighting_fire();
 		}
 	}
 
@@ -679,14 +679,16 @@ void searching_for_fire(void){
 
 void fighting_fire(void){
 
-	//Fight against fire
-	deploy_antifire_measures();
 	send_fire();
-	chThdSleepMilliseconds(1000);
-	stop_antifire_measures();
 
-	if(check_for_fire() == false) movement_state = SEARCHING_FIRE;
+	while(check_for_fire() == true){
+			//Fight against fire
+		deploy_antifire_measures();
+		chThdSleepMilliseconds(1000);
+		stop_antifire_measures();
+	}
 
+	movement_state = SEARCHING_FIRE;
 }
 
 /**
