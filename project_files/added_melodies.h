@@ -2,7 +2,7 @@
  * added_melodies.h
  *
  *  Created on: 8 avr. 2022
- *      Author: AdrienPannatier
+ *      Author: Axel Praplan, Adrien Pannatier
  *
  *  Functions and defines to store and play custom melodies and alarms, using the play_melody.h library
  *

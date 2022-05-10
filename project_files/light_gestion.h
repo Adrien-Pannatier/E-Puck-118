@@ -1,8 +1,8 @@
 /*
- * LED.h
+ * light_gestion.h
  *
  *  Created on: 12 avr. 2022
- *      Author: APrap
+ *      Authors: Axel Praplan, Adrien Pannatier
  *
  *  Thread declaration and defines for LED responses depending on
  *  the state of the robot
@@ -13,6 +13,7 @@
 
 #define ALAMRM_SPEED	70
 
+//RGB states
 #define LED_ON		1
 #define LED_OFF		0
 #define RGB_RED		100, 0, 0

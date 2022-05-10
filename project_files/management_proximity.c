@@ -1,8 +1,8 @@
 /*
- * Proximity.c
+ * management_proximity.c
  *
  *  Created on: 8 avr. 2022
- *      Author: APrap
+ *      Author: Axel Praplan, Adrien Pannatier
  */
 
 #include <management_proximity.h>

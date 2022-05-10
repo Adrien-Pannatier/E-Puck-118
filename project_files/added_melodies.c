@@ -2,7 +2,7 @@
  * added_melodies.c
  *
  *  Created on: 8 avr. 2022
- *      Author: AdrienPannatier
+ *      Authors: Axel Praplan, Adrien Pannatier
  *
  *  Functions and defines to store and play custom melodies and alarms, using the play_melody.h library
  *
@@ -20,6 +20,8 @@ static thread_reference_t play_add_alarm_ref = NULL;
 
 //variable to stop the playing if necessary
 static bool addplay = true;
+
+/****************************NOTES LIBRARY*************************************/
 
 //ROCKY melody
 static const uint16_t rocky_melody[] = {
@@ -124,6 +126,8 @@ static const uint16_t baseball_alarm[] = {
 	NOTE_E4, NOTE_G4, 0
 };
 
+/****************************TEMPO LIBRARY*************************************/
+
 //ROCKY tempo
 static const float rocky_tempo[] = {
 	8,
@@ -222,7 +226,7 @@ static const float baseball_tempo[] = {
 	8, 1, 1
 };
 
-
+/****************************MELODY LIBRARY*************************************/
 
 static const melody_t added_melodies[NB_ADDED_SONGS] = {
   //ROCKY
@@ -259,11 +263,6 @@ static const melody_t added_alarms[NB_ADDED_ALARMS] = {
 	.length = sizeof(baseball_alarm)/sizeof(uint16_t),
   }
 };
-
-void playAddedMelody(added_song_selection_t choice, play_melody_option_t option){
-	//if(sizeof(rocky_melody)/sizeof(uint16_t)==sizeof(rocky_tempo)/sizeof(float))set_led(LED1,1);
-	playMelody(EXTERNAL_SONG, option, &added_melodies[choice]);
-}
 
 static THD_WORKING_AREA(waPlayAddAlarmThd, 128);
 static THD_FUNCTION(PlayAddAlarmThd, arg) {
@@ -303,6 +302,12 @@ static THD_FUNCTION(PlayAddAlarmThd, arg) {
     //signals to the threads waiting that the melody has finished
     chCondBroadcast(&play_add_alarm_condvar);
 	}
+}
+
+/****************************PUBLIC FUNCTIONS*************************************/
+
+void playAddedMelody(added_song_selection_t choice, play_melody_option_t option){
+	playMelody(EXTERNAL_SONG, option, &added_melodies[choice]);
 }
 
 void playAddedAlarmStart(void){
@@ -351,3 +356,5 @@ void waitAlarmHasFinished(void) {
     chMtxUnlock(&play_add_alarm_lock);
   }
 }
+
+/**************************END PUBLIC FUNCTIONS***********************************/
