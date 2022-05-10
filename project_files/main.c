@@ -56,7 +56,7 @@ int main(void)
     mpu_init();
 
     //LED
-    spi_comm_start();
+    //spi_comm_start();
     //LED_start();
 
     //Music
@@ -77,7 +77,7 @@ int main(void)
     //Transmission
     usb_start();
     serial_start();
-    //management_transmissions_start();
+    management_transmissions_start();
 
     //Movement
     motors_init();

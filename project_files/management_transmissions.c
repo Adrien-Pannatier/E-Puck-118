@@ -70,9 +70,9 @@
 static uint8_t buffer_transmission[BUFFER_SIZE];
 static uint8_t buffer_transmission_ptr_store = 0;
 static uint8_t buffer_transmission_ptr_send = 0;
-static uint32_t buffer_store_counter = 0;
-static uint32_t buffer_send_counter = 0;
-//static bool reset_counter = false;
+static uint16_t buffer_store_counter = 0;
+static uint16_t buffer_send_counter = 0;
+static bool reset_counter = false;
 
 void SendUint8ToComputer(uint8_t* data, uint16_t size);
 
@@ -85,10 +85,10 @@ void store_buffer(uint8_t mapping_transmission){
 	buffer_transmission_ptr_store++;
 	buffer_store_counter ++;
 	if(buffer_transmission_ptr_store == BUFFER_SIZE) buffer_transmission_ptr_store = 0;
-//	if(buffer_store_counter == MAX_COUNTER){
-//		buffer_store_counter = 0;
-//		reset_counter = true;
-//	}
+	if(buffer_store_counter == MAX_COUNTER){
+		buffer_store_counter = 0;
+		reset_counter = true;
+	}
 
 }
 
@@ -150,22 +150,22 @@ static THD_FUNCTION(Transmissions, arg) {
     	//Transmission send
 
     	//Check if there is something to send in the buffer
-    	if(buffer_send_counter < buffer_store_counter) //|| reset_counter)
+    	if(buffer_send_counter < buffer_store_counter || reset_counter)
     	{
 
 			//Send to computer
     		SendUint8ToComputer(&buffer_transmission[buffer_transmission_ptr_send], DATA_SIZE);
 
-    		//chprintf((BaseSequentialStream *)&SD3, "START% \n\n\r", buffer_transmission[buffer_transmission_ptr_send]);
+    		//chprintf((BaseSequentialStream *)&SD3, "START %.u \n\r", buffer_transmission[buffer_transmission_ptr_send]);
 
 			//Incr and reset buffer ptr
 			buffer_transmission_ptr_send++;
 			buffer_send_counter++;
 			if(buffer_transmission_ptr_send == BUFFER_SIZE) buffer_transmission_ptr_send = 0;
-//			if(buffer_store_counter == MAX_COUNTER){
-//				buffer_store_counter = 0;
-//				reset_counter = false;
-//			}
+			if(buffer_send_counter == MAX_COUNTER){
+				buffer_send_counter = 0;
+				reset_counter = false;
+			}
 
     	}
 
