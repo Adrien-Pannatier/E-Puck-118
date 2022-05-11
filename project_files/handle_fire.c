@@ -32,7 +32,7 @@ void deploy_antifire_measures(void){
 	//activates the front led pin which turns on the air blower
 	set_front_led(1);
 	//turns on the siren
-	playAddedAlarm(BASEBALL,ML_SIMPLE_PLAY);
+	//playAddedAlarm(BASEBALL,ML_SIMPLE_PLAY);
 }
 
 void stop_antifire_measures(void){

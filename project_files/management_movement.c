@@ -35,7 +35,7 @@
 #define MAZE_WIDTH						12.0											//[cm]
 #define NSTEP_ONE_TURN   				1000 											//number of step for 1 turn of the motor
 #define WHEEL_PERIMETER     			13.0 											//[cm]
-#define SPEED							4.0												//[cm/s]
+#define SPEED							6.0												//[cm/s]
 #define SPEED_STEP						(SPEED*NSTEP_ONE_TURN/WHEEL_PERIMETER)			//[step/s]
 #define ROTATIONAL_SPEED				280												//[step]
 #define STEP_TO_REACH_THE_MIDDLE		320											 	//[step]
@@ -75,8 +75,8 @@ static uint8_t movement_state = STOP;
 static int16_t orientation = NORTH;
 
 //Store history of navigation
-//static int16_t buffer_navigation_history[HISTORY_SIZE];
-//static int8_t ptr_buffer_nav = 0;
+static int16_t buffer_navigation_history[HISTORY_SIZE];
+static int8_t ptr_buffer_nav = 0;
 
 //DEV
 //oooooooooooooooooooooooooooooooooooooooooooooooooo
@@ -207,6 +207,8 @@ static THD_FUNCTION(Movement, arg) {
 									opening_left = false;
 									opening_front = true;
 									orientation = NORTH;
+									orientation_before_check = NORTH;
+									desired_orientation = NORTH;
 //									if(check_for_fire()) deploy_antifire_measures();
 //									else stop_antifire_measures();
        								break;
@@ -377,9 +379,9 @@ void followind_corridor(void){
 		}
 
 //		//Save history of movements for trajectory correction
-//		buffer_navigation_history[ptr_buffer_nav] = correction;
-//		ptr_buffer_nav++;
-//		if(ptr_buffer_nav == HISTORY_SIZE) ptr_buffer_nav = 0;
+		buffer_navigation_history[ptr_buffer_nav] = correction;
+		ptr_buffer_nav++;
+		if(ptr_buffer_nav == HISTORY_SIZE) ptr_buffer_nav = 0;
 
 		//Check for dead end or opening
 		if(opening_found()){
@@ -420,27 +422,29 @@ bool corridor_found(void){
  * @brief 			Performs the reverse of the last movements made by the robot in case of incorrect movement
  *
  */
-//bool trajectory_correction(void){
-//
-//	static uint8_t counter = 0;
-//
-//	//Rewind back some movements after a wrong correction
-//	if(ptr_buffer_nav == 0) ptr_buffer_nav = HISTORY_SIZE;
-//	ptr_buffer_nav--;
-//
-//	right_motor_set_speed(SPEED_STEP - buffer_navigation_history[ptr_buffer_nav]);
-//	left_motor_set_speed(SPEED_STEP + buffer_navigation_history[ptr_buffer_nav]);
-//
-//	counter++;
-//	if(counter == HISTORY_SIZE){
-//		counter = 0;
-//		return COMPLETE;
-//	}
-//
-//	return NOT_COMPLETE;
-//}
+bool trajectory_correction(void){
+
+	static uint8_t counter = 0;
+
+	//Rewind back some movements after a wrong correction
+	if(ptr_buffer_nav == 0) ptr_buffer_nav = HISTORY_SIZE;
+	ptr_buffer_nav--;
+
+	right_motor_set_speed(SPEED_STEP - buffer_navigation_history[ptr_buffer_nav]);
+	left_motor_set_speed(SPEED_STEP + buffer_navigation_history[ptr_buffer_nav]);
+
+	counter++;
+	if(counter == HISTORY_SIZE){
+		counter = 0;
+		return true;
+	}
+
+	return false;
+}
 
 void moving_in_intersection(void){
+
+	static bool trajectory_corrected = false;
 
 	//Reset the right motor counter for position
 	right_motor_set_pos(0);
@@ -448,14 +452,17 @@ void moving_in_intersection(void){
 	//Reset counter left motor for mapping
 	left_motor_set_pos(NULL_POS);
 
-	//Correction of trajectory
-//	trajectory_correction();
-
 	//Start moving forward in the crossing
 	right_motor_set_speed(SPEED_STEP);
 	left_motor_set_speed(SPEED_STEP);
 
 	while(movement_state != STOP){
+
+		//Correction of trajectory
+		if(!trajectory_corrected)
+		{
+			if(trajectory_correction() == true) trajectory_corrected = true;
+		}
 
 		//Send movement for transmission every 1cm
 		if(left_motor_get_pos() >= (NSTEP_ONE_TURN / WHEEL_PERIMETER)){
@@ -476,6 +483,8 @@ void moving_in_intersection(void){
 			movement_state = ROTATING;
 			break;
 		}
+
+		trajectory_corrected = false;
 
 		chThdSleepMilliseconds(20);
 	}
@@ -621,8 +630,7 @@ void choosing_direction(void){
 }
 
 void searching_for_fire(void){
-	send_crossing(opening_right, opening_front, opening_left);
-	chThdSleepMilliseconds(20);
+
 	//Checking front
 	if(check_for_fire()){
 
@@ -640,7 +648,7 @@ void searching_for_fire(void){
 			//Fire procedure
 			opening_left = false;
 			movement_state = FIRE_FIGHTING;
-			return;
+			fighting_fire();
 		}
 		//Checking right (after left)
 		if(opening_right){
@@ -650,7 +658,7 @@ void searching_for_fire(void){
 				//Fire procedure
 				opening_right = false;
 				movement_state = FIRE_FIGHTING;
-				return;
+				fighting_fire();
 			}
 		}
 	}
@@ -662,7 +670,7 @@ void searching_for_fire(void){
 			//Fire procedure
 			opening_right = false;
 			movement_state = FIRE_FIGHTING;
-			return;
+			fighting_fire();
 		}
 	}
 
@@ -671,14 +679,16 @@ void searching_for_fire(void){
 
 void fighting_fire(void){
 
-	//Fight against fire
-	deploy_antifire_measures();
 	send_fire();
-	chThdSleepMilliseconds(1000);
-	stop_antifire_measures();
 
-	if(check_for_fire() == false) movement_state = SEARCHING_FIRE;
+	while(check_for_fire() == true){
+			//Fight against fire
+		deploy_antifire_measures();
+		chThdSleepMilliseconds(1000);
+		stop_antifire_measures();
+	}
 
+	movement_state = SEARCHING_FIRE;
 }
 
 /**
@@ -720,13 +730,13 @@ bool check_end_of_maze(void){
  *
  */
 void end_of_maze_celebration(void){
-	playAddedMelody(ROCKY,ML_SIMPLE_PLAY);
-	rotate(LEFT_360);
-	rotate(RIGHT_360);
-	rotate(LEFT_360);
-	rotate(RIGHT_360);
-	rotate(LEFT_360);
-	rotate(RIGHT_360);
+	//playAddedMelody(ROCKY,ML_SIMPLE_PLAY);
+//	rotate(LEFT_360);
+//	rotate(RIGHT_360);
+//	rotate(LEFT_360);
+//	rotate(RIGHT_360);
+//	rotate(LEFT_360);
+//	rotate(RIGHT_360);
 	waitMelodyHasFinished();
 	chThdSleepMilliseconds(1000);
 
