@@ -682,12 +682,15 @@ void fighting_fire(void){
 
 	send_fire();
 
-	while(check_for_fire() == true){
-			//Fight against fire
+	do {
+
+		//Fight against fire
 		deploy_antifire_measures();
 		chThdSleepMilliseconds(1000);
 		stop_antifire_measures();
+
 	}
+	while(check_for_fire() == true);
 
 	movement_state = SEARCHING_FIRE;
 }
