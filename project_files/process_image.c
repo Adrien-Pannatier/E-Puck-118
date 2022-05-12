@@ -115,12 +115,18 @@ static THD_FUNCTION(CaptureImage, arg) {
 	dcmi_prepare();
 
     while(1){
-        //starts a capture
-		dcmi_capture_start();
-		//waits for the capture to be done
-		wait_image_ready();
-		//signals an image has been captured
-		chBSemSignal(&image_ready_sem);
+
+    	if(image_capture == true)
+    	{
+			//starts a capture
+			dcmi_capture_start();
+			//waits for the capture to be done
+			wait_image_ready();
+			//signals an image has been captured
+			chBSemSignal(&image_ready_sem);
+    	}
+
+    	chThdSleepMilliseconds(20);
     }
 }
 
@@ -187,7 +193,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 			//SendUint8ToComputer(image, IMAGE_BUFFER_SIZE);
     	}
 
-    	chThdSleepMilliseconds(50);
+    	chThdSleepMilliseconds(20);
     }
 }
 
