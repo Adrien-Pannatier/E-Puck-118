@@ -355,7 +355,7 @@ void followind_corridor(void){
 	//Reset counter left motor for mapping
 	left_motor_set_pos(NULL_POS);
 
-	while(movement_state == MOVING){
+	while(movement_state != STOP){
 
 		//PD
 		error = get_calibrated_prox(IR3) - get_calibrated_prox(IR6);
@@ -456,7 +456,7 @@ void moving_in_intersection(void){
 	right_motor_set_speed(SPEED_STEP);
 	left_motor_set_speed(SPEED_STEP);
 
-	while(movement_state == LEAVING_INTERSECTION){
+	while(movement_state != STOP){
 
 		//Correction of trajectory
 		if(!trajectory_corrected)
