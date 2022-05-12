@@ -137,7 +137,7 @@ void SendUint8ToComputer(uint8_t* data, uint16_t size)
 }
 
 
-static THD_WORKING_AREA(waThdTransmissions, 256);
+static THD_WORKING_AREA(waThdTransmissions, 128);
 static THD_FUNCTION(Transmissions, arg) {
 
     chRegSetThreadName(__FUNCTION__);

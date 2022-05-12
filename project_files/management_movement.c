@@ -562,6 +562,7 @@ void analysing_intersection(void){
 
 	//CHECKING IF END OF MAZE
 	if(check_end_of_maze() == true){
+		stop_movement();
 		movement_state = END_OF_MAZE;
 	}
 	else{
@@ -731,6 +732,7 @@ bool check_end_of_maze(void){
  */
 void end_of_maze_celebration(void){
 	//playAddedMelody(ROCKY,ML_SIMPLE_PLAY);
+
 //	rotate(LEFT_360);
 //	rotate(RIGHT_360);
 //	rotate(LEFT_360);
@@ -739,8 +741,6 @@ void end_of_maze_celebration(void){
 //	rotate(RIGHT_360);
 	waitMelodyHasFinished();
 	chThdSleepMilliseconds(1000);
-
-
 }
 
 /*************************END INTERNAL FUNCTIONS**********************************/
