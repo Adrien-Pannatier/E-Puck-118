@@ -57,7 +57,6 @@ int main(void)
     mpu_init();
 
     //LED
-    //spi_comm_start();
     LED_start();
 
     //Music
@@ -92,8 +91,8 @@ int main(void)
     management_movement_start();
 
     /* Infinite loop. */
-    while (1) {
-
+    while (1)
+    {
     	//Selector control
     	switch (get_selector())
     	{

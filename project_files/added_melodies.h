@@ -2,7 +2,7 @@
  * added_melodies.h
  *
  *  Created on: 8 avr. 2022
- *      Author: Axel Praplan, Adrien Pannatier
+ *     Authors: Axel Praplan, Adrien Pannatier
  *
  *  Functions and defines to store and play custom melodies and alarms, using the play_melody.h library
  *
@@ -50,7 +50,7 @@ typedef enum{
 	NB_ADDED_SONGS,	//tell the number of internal songs
 }added_song_selection_t;
 
-//available new alarms
+//available alarms
 typedef enum{
 	//internal alarms available
 	PINPON = 0,

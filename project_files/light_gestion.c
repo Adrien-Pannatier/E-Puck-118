@@ -2,7 +2,7 @@
  * light_gestion.c
  *
  *  Created on: 12 avr. 2022
- *      Authors: Axel Praplan, Adrien Pannatier
+ *     Authors: Axel Praplan, Adrien Pannatier
  *
  *  Thread declaration and defines for LED responses depending on
  *  the state of the robot
@@ -20,52 +20,39 @@ static THD_FUNCTION(ThdLED, arg) {
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
 
-    while (1) {
-
+    while (1)
+    {
     	if(get_movement_state() == STOP)
     	{
     		//LEDs OFF
-
     		clear_leds();
-    		chThdSleepMilliseconds(300);
+    		chThdSleepMilliseconds(ALAMRM_SPEED);
     	}
     	else if(get_movement_state() == FIRE_FIGHTING)
        	{
-    		//Alarm rotation of red leds
-
+    		//pattern for FIRE_FIGHTING state
     		clear_leds();
     		set_led(LED1, LED_ON);
     		chThdSleepMilliseconds(ALAMRM_SPEED);
-    		//set_rgb_led(LED2, RGB_RED);
     		set_led(LED1, LED_OFF);
     		chThdSleepMilliseconds(ALAMRM_SPEED);
     		set_led(LED3, LED_ON);
-    		//set_rgb_led(LED2, RGB_OFF);
     		chThdSleepMilliseconds(ALAMRM_SPEED);
-    		//set_rgb_led(LED4, RGB_RED);
     		set_led(LED3, LED_OFF);
     		chThdSleepMilliseconds(ALAMRM_SPEED);
     		set_led(LED5, LED_ON);
-    		//set_rgb_led(LED4, RGB_OFF);
     		chThdSleepMilliseconds(ALAMRM_SPEED);
-    		//set_rgb_led(LED6, RGB_RED);
     		set_led(LED5, LED_OFF);
     		chThdSleepMilliseconds(ALAMRM_SPEED);
     		set_led(LED7, LED_ON);
-    		//set_rgb_led(LED6, RGB_OFF);
     		chThdSleepMilliseconds(ALAMRM_SPEED);
-    		//set_rgb_led(LED8, RGB_RED);
     		set_led(LED7, LED_OFF);
     		chThdSleepMilliseconds(ALAMRM_SPEED);
-
-
        	}
     	else if(get_movement_state() == SEARCHING_FIRE)
        	{
-    		//Alarm rotation of red leds
-
+    		//pattern for SEARCHING FIRE state
     		clear_leds();
-
     		set_led(LED1, LED_ON);
     		set_led(LED5, LED_ON);
     		chThdSleepMilliseconds(ALAMRM_SPEED);
@@ -78,35 +65,15 @@ static THD_FUNCTION(ThdLED, arg) {
     		set_led(LED3, LED_OFF);
     		set_led(LED7, LED_OFF);
     		chThdSleepMilliseconds(ALAMRM_SPEED);
-
-
-
        	}
-    	else if(get_movement_state() == END_OF_MAZE){
+    	else if(get_movement_state() == END_OF_MAZE)
+    	{
+    		//pattern for END OF MAZE state
     		set_body_led(1);
     	    chThdSleepMilliseconds(ALAMRM_SPEED);
     	    set_body_led(0);
     	    chThdSleepMilliseconds(ALAMRM_SPEED);
     	}
-       	else //if(get_movement_state() == other)
-       	{
-       		//Siren fire-fighter truck
-
-//   			set_rgb_led(LED2, RGB_BLUE);
-//   			set_rgb_led(LED4, RGB_RED);
-//   			set_rgb_led(LED6, RGB_BLUE);
-//   			set_rgb_led(LED8, RGB_RED);
-
-//   			chThdSleepMilliseconds(300);
-//
-//   			set_rgb_led(LED2, RGB_RED);
-//   			set_rgb_led(LED4, RGB_BLUE);
-//   			set_rgb_led(LED6, RGB_RED);
-//   			set_rgb_led(LED8, RGB_BLUE);
-//
-//   			chThdSleepMilliseconds(300);
-
-     	}
     }
 }
 

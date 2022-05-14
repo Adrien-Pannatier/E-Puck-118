@@ -2,7 +2,7 @@
  * light_gestion.h
  *
  *  Created on: 12 avr. 2022
- *      Authors: Axel Praplan, Adrien Pannatier
+ *     Authors: Axel Praplan, Adrien Pannatier
  *
  *  Thread declaration and defines for LED responses depending on
  *  the state of the robot

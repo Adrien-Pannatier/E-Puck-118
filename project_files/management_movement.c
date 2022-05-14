@@ -2,7 +2,7 @@
  * management_movement.c
  *
  *  Created on: 15 avr. 2022
- *      Authors: Axel Praplan, Adrien Pannatier
+ *     Authors: Axel Praplan, Adrien Pannatier
  *
  *  Functions and defines to manage the state of the robot and the
  *  way it moves and interacts with its surroundings
@@ -38,7 +38,7 @@
 #define SPEED							6.0												//[cm/s]
 #define SPEED_STEP						(SPEED*NSTEP_ONE_TURN/WHEEL_PERIMETER)			//[step/s]
 #define ROTATIONAL_SPEED				280												//[step]
-#define STEP_TO_REACH_THE_MIDDLE		320											 	//[step]
+#define STEP_TO_REACH_THE_MIDDLE		300											 	//[step]
 #define ZERO_SPEED						0												//[step]
 #define HISTORY_SIZE					40												//Size of navigation history buffer (store history of movements)
 
@@ -53,11 +53,9 @@
 #define LEFT_180						-180											//[step]
 #define LEFT_90							-90												//[step]
 
-
 //PD parameters
 #define KP								1.65
 #define KD								0.06
-
 
 //DEV
 #define VL53L0X_OPENING					120												//distance considered for opening [mm]
@@ -211,13 +209,11 @@ static THD_FUNCTION(Movement, arg) {
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
 
-    while(1){
-
+    while(1)
+    {
     	//call of all motion-related functions based on the current state of the robot
-
-    	switch(movement_state){
-
-
+    	switch(movement_state)
+    	{
        	case STOP: 					stop_movement();
 									opening_right = false;
 									opening_left = false;
@@ -226,31 +222,22 @@ static THD_FUNCTION(Movement, arg) {
 									orientation_before_check = NORTH;
 									desired_orientation = NORTH; break;
 
-
     	case MOVING: 				followind_corridor(); break;
-
 
     	case REACHING_INTERSECTION: moving_in_intersection(); break;
 
-
     	case ROTATING: 				analysing_intersection(); break;
-
 
     	case LEAVING_INTERSECTION: 	join_corridor(); break;
 
-
     	case SEARCHING_FIRE:		searching_for_fire(); break;
-
 
     	case FIRE_FIGHTING: 		fighting_fire(); break;
 
-
     	case END_OF_MAZE:			end_of_maze_celebration(); break;
-
 
     	default: 					movement_state = STOP; break;
     	}
-
     	chThdSleepMilliseconds(50);
     }
 }
@@ -258,42 +245,50 @@ static THD_FUNCTION(Movement, arg) {
 //DEV
 //ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
-int16_t absolute_value_int16(int16_t value){
+int16_t absolute_value_int16(int16_t value)
+{
 	if(value < 0) value = -value;
 	return value;
 }
 
-int32_t absolute_value_int32(int32_t value){
+int32_t absolute_value_int32(int32_t value)
+{
 	if(value < 0) value = -value;
 	return value;
 }
 
 
-int infinity_selector(void){
+int infinity_selector(void)
+{
 	static int last_pos = 0;
 	int pos = get_selector();
 
 	if(pos == last_pos) return(0);
-	if(pos == 0 && last_pos == 16){
+	if(pos == 0 && last_pos == 16)
+	{
 		last_pos = pos;
 		return(1);
 	}
-	if(pos == 16 && last_pos == 0){
+	if(pos == 16 && last_pos == 0)
+	{
 		last_pos = pos;
 		return(-1);
 	}
-	if(pos > last_pos){
+	if(pos > last_pos)
+	{
 		last_pos = pos;
 		return(1);
 	}
-	if(pos < last_pos){
+	if(pos < last_pos)
+	{
 		last_pos = pos;
 		return(-1);
 	}
 	return(0);
 }
 
-void PID_tuning(void){
+void PID_tuning(void)
+{
 	static int state = 0;
 	int max_state = 3;
 
@@ -313,7 +308,6 @@ void PID_tuning(void){
 	case 3: set_led(LED5, 1);
 	break;
 	}
-
 }
 
 //oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
@@ -322,15 +316,15 @@ void PID_tuning(void){
 /***************************INTERNAL FUNCTIONS************************************/
 
 
-void stop_movement(void){
-
+void stop_movement(void)
+{
 	//Set zero speed
 	right_motor_set_speed(ZERO_SPEED);
 	left_motor_set_speed(ZERO_SPEED);
 }
 
-bool opening_found(void){
-
+bool opening_found(void)
+{
 	//if opening detected return true
 	if(get_calibrated_prox(IR3) < NOISE_IR || get_calibrated_prox(IR6) < NOISE_IR)
 	{
@@ -339,10 +333,9 @@ bool opening_found(void){
 	return false;
 }
 
-bool dead_end_found(void){
-
+bool dead_end_found(void)
+{
 	static uint8_t certainty_counter = 0;
-
 	//if front is obstructed return true
 
 	if(VL53L0X_get_dist_mm() <= VL53L0X_OBSTRUCTED)
@@ -361,8 +354,8 @@ bool dead_end_found(void){
 	return false;
 }
 
-void followind_corridor(void){
-
+void followind_corridor(void)
+{
 	//Variables PD
 	int32_t error = 0;
 	int32_t past_error = 0;
@@ -371,8 +364,8 @@ void followind_corridor(void){
 	//Reset counter left motor for mapping
 	left_motor_set_pos(NULL_POS);
 
-	while(movement_state != STOP){
-
+	while(movement_state != STOP)
+	{
 		//PD
 		error = get_calibrated_prox(IR3) - get_calibrated_prox(IR6);
 
@@ -394,17 +387,19 @@ void followind_corridor(void){
 			left_motor_set_pos(NULL_POS);
 		}
 
-//		//Save history of movements for trajectory correction
+		//Save history of movements for trajectory correction
 		buffer_navigation_history[ptr_buffer_nav] = correction;
 		ptr_buffer_nav++;
 		if(ptr_buffer_nav == HISTORY_SIZE) ptr_buffer_nav = 0;
 
 		//Check for dead end or opening
-		if(opening_found()){
+		if(opening_found())
+		{
 			movement_state = REACHING_INTERSECTION;
 			break;
 		}
-		if(dead_end_found()){
+		if(dead_end_found())
+		{
 			movement_state = ROTATING;
 			break;
 		}
@@ -413,8 +408,8 @@ void followind_corridor(void){
 	}
 }
 
-bool corridor_found(void){
-
+bool corridor_found(void)
+{
 	//Counter to avoid noise
 	static uint8_t certainty_counter = 0;
 
@@ -433,8 +428,8 @@ bool corridor_found(void){
 	return false;
 }
 
-bool trajectory_correction(void){
-
+bool trajectory_correction(void)
+{
 	static uint8_t counter = 0;
 
 	//Rewind back some movements after a wrong correction
@@ -445,7 +440,8 @@ bool trajectory_correction(void){
 	left_motor_set_speed(SPEED_STEP + buffer_navigation_history[ptr_buffer_nav]);
 
 	counter++;
-	if(counter == HISTORY_SIZE){
+	if(counter == HISTORY_SIZE)
+	{
 		counter = 0;
 		return true;
 	}
@@ -453,8 +449,8 @@ bool trajectory_correction(void){
 	return false;
 }
 
-void moving_in_intersection(void){
-
+void moving_in_intersection(void)
+{
 	static bool trajectory_corrected = false;
 
 	//Reset the right motor counter for position
@@ -467,22 +463,24 @@ void moving_in_intersection(void){
 	right_motor_set_speed(SPEED_STEP);
 	left_motor_set_speed(SPEED_STEP);
 
-	while(movement_state != STOP){
-
+	while(movement_state != STOP)
+	{
 		//Correction of trajectory
 		if(!trajectory_corrected)
 		{
 			if(trajectory_correction() == true) trajectory_corrected = true;
 		}
 
-		//Send movement for transmission every 1cm
-		if(left_motor_get_pos() >= (NSTEP_ONE_TURN / WHEEL_PERIMETER)){
+		//Send movement for transmission regularly
+		if(left_motor_get_pos() >= (NSTEP_ONE_TURN / WHEEL_PERIMETER))
+		{
 			send_moving_in_intersection();
 			left_motor_set_pos(NULL_POS);
 		}
 
 		//Check if a corridor has been found again
-		if(corridor_found()){
+		if(corridor_found())
+		{
 			movement_state = MOVING;
 			break;
 		}
@@ -501,8 +499,8 @@ void moving_in_intersection(void){
 	}
 }
 
-void update_orientation(int rotation_angle){
-
+void update_orientation(int rotation_angle)
+{
 	orientation = orientation + rotation_angle;
 
 	//Modulo 360°
@@ -510,12 +508,11 @@ void update_orientation(int rotation_angle){
 	else if(orientation < MIN_ANGLE) orientation += MAX_ANGLE;
 
 	//Send new orientation for mapping
-	send_orientation(orientation);
-
+	send_orientation(orientation)
 }
 
-void rotate(int rotation_angle){
-
+void rotate(int rotation_angle)
+{
 	int32_t right_motor_pos;
 
 	//Reset the counter
@@ -533,8 +530,8 @@ void rotate(int rotation_angle){
 		left_motor_set_speed(-ROTATIONAL_SPEED);
 	}
 
-	while(1){
-
+	while(1)
+	{
 		//stop when desired angle is reached
 		right_motor_pos = right_motor_get_pos();
 		if(absolute_value_int32(right_motor_pos) >= absolute_value_int32(rotation_angle * STEP_DEG))
@@ -549,21 +546,24 @@ void rotate(int rotation_angle){
 	update_orientation(rotation_angle);
 }
 
-void analysing_intersection(void){
-
+void analysing_intersection(void)
+{
 	//Store orientation before moving
 	orientation_before_check = orientation;
 
 	//Check for opening
-	if(VL53L0X_get_dist_mm() >= VL53L0X_OPENING){
+	if(VL53L0X_get_dist_mm() >= VL53L0X_OPENING)
+	{
 		opening_front = true;
 //		set_led(LED1, 1);
 	}
-	if(get_calibrated_prox(IR3) <= NOISE_IR){
+	if(get_calibrated_prox(IR3) <= NOISE_IR)
+	{
 		opening_right = true;
 //		set_led(LED3, 1);
 	}
-	if(get_calibrated_prox(IR6) <= NOISE_IR){
+	if(get_calibrated_prox(IR6) <= NOISE_IR)
+	{
 		opening_left = true;
 //		set_led(LED7, 1);
 	}
@@ -572,17 +572,19 @@ void analysing_intersection(void){
 	send_crossing(opening_right, opening_front, opening_left);
 
 	//CHECKING IF END OF MAZE
-	if(check_end_of_maze() == true){
+	if(check_end_of_maze() == true)
+	{
 		stop_movement();
 		movement_state = END_OF_MAZE;
 	}
-	else{
+	else
+	{
 		movement_state = SEARCHING_FIRE;
 	}
 }
 
-void join_corridor(void){
-
+void join_corridor(void)
+{
 	//Turn to the right direction
 	turn_towards_path();
 
@@ -598,27 +600,26 @@ void join_corridor(void){
 	//Reset counter for mapping
 	left_motor_set_pos(NULL_POS);
 
-	while(movement_state != STOP){
-
+	while(movement_state != STOP)
+	{
 		//Send movement for transmission every 1cm
-		if(left_motor_get_pos() >= (NSTEP_ONE_TURN / WHEEL_PERIMETER)){
+		if(left_motor_get_pos() >= (NSTEP_ONE_TURN / WHEEL_PERIMETER))
+		{
 			send_moving_in_intersection();
 			left_motor_set_pos(NULL_POS);
 		}
 
 		//Check for corridor
-		if(corridor_found()){
-
+		if(corridor_found())
+		{
 			movement_state = MOVING;
-
 			break;
 		}
 
 		//Check for dead end
-		if(dead_end_found()){
-
+		if(dead_end_found())
+		{
 			movement_state = ROTATING;
-
 			break;
 		}
 		chThdSleepMilliseconds(20);
@@ -626,7 +627,8 @@ void join_corridor(void){
 //			clear_leds();
 }
 
-void choosing_direction(void){
+void choosing_direction(void)
+{
 	if(opening_right)			desired_orientation = orientation_before_check + RIGHT_90;
 	else if (opening_front)		desired_orientation = orientation_before_check;
 	else if (opening_left) 		desired_orientation = orientation_before_check + LEFT_90;
@@ -637,11 +639,11 @@ void choosing_direction(void){
 	else if(desired_orientation < MIN_ANGLE) desired_orientation += MAX_ANGLE;
 }
 
-void searching_for_fire(void){
-
+void searching_for_fire(void)
+{
 	//Checking front
-	if(check_for_fire()){
-
+	if(check_for_fire())
+	{
 		//Fire procedure
 		opening_front = false;
 		movement_state = FIRE_FIGHTING;
@@ -649,20 +651,22 @@ void searching_for_fire(void){
 	}
 
 	//Checking left
-	if(opening_left){
+	if(opening_left)
+	{
 		rotate(LEFT_90);
-		if(check_for_fire()){
-
+		if(check_for_fire())
+		{
 			//Fire procedure
 			opening_left = false;
 			movement_state = FIRE_FIGHTING;
 			fighting_fire();
 		}
 		//Checking right (after left)
-		if(opening_right){
+		if(opening_right)
+		{
 			rotate(RIGHT_180);
-			if(check_for_fire()){
-
+			if(check_for_fire())
+			{
 				//Fire procedure
 				opening_right = false;
 				movement_state = FIRE_FIGHTING;
@@ -671,10 +675,11 @@ void searching_for_fire(void){
 		}
 	}
 	//Checking right
-	else if(opening_right){
+	else if(opening_right)
+	{
 		rotate(RIGHT_90);
-		if(check_for_fire()){
-
+		if(check_for_fire())
+		{
 			//Fire procedure
 			opening_right = false;
 			movement_state = FIRE_FIGHTING;
@@ -685,25 +690,23 @@ void searching_for_fire(void){
 	movement_state = LEAVING_INTERSECTION;
 }
 
-void fighting_fire(void){
-
+void fighting_fire(void)
+{
 	send_fire();
-
-	do {
-
+	do
+	{
 		//Fight against fire
 		deploy_antifire_measures();
 		chThdSleepMilliseconds(1000);
 		stop_antifire_measures();
-
 	}
 	while(check_for_fire() == true);
 
 	movement_state = SEARCHING_FIRE;
 }
 
-void turn_towards_path(void){
-
+void turn_towards_path(void)
+{
 	//Choose the right direction
 	choosing_direction();
 
@@ -715,8 +718,10 @@ void turn_towards_path(void){
 	}
 }
 
-bool check_end_of_maze(void){
-	if(opening_front && opening_left && opening_right){
+bool check_end_of_maze(void)
+{
+	if(opening_front && opening_left && opening_right)
+	{
 		if(/*get_calibrated_prox(IR4) <= NOISE_IR && get_calibrated_prox(IR5) <= NOISE_IR &&*/
 			get_calibrated_prox(IR2) <= NOISE_IR && get_calibrated_prox(IR7) <= NOISE_IR){
 			return true;
@@ -726,15 +731,16 @@ bool check_end_of_maze(void){
 	return false;
 }
 
-void end_of_maze_celebration(void){
-	//playAddedMelody(ROCKY,ML_SIMPLE_PLAY);
+void end_of_maze_celebration(void)
+{
+	playAddedMelody(GHOSTBUSTERS,ML_SIMPLE_PLAY);
 
-//	rotate(LEFT_360);
-//	rotate(RIGHT_360);
-//	rotate(LEFT_360);
-//	rotate(RIGHT_360);
-//	rotate(LEFT_360);
-//	rotate(RIGHT_360);
+	rotate(LEFT_360);
+	rotate(RIGHT_360);
+	rotate(LEFT_360);
+	rotate(RIGHT_360);
+	rotate(LEFT_360);
+	rotate(RIGHT_360);
 	waitMelodyHasFinished();
 	chThdSleepMilliseconds(1000);
 }
@@ -744,23 +750,28 @@ void end_of_maze_celebration(void){
 
 /****************************PUBLIC FUNCTIONS*************************************/
 
-bool get_fire_detected(void){
+bool get_fire_detected(void)
+{
 	return fire_detected;
 }
 
-uint8_t get_movement_state(void){
+uint8_t get_movement_state(void)
+{
 	return movement_state;
 }
 
-uint8_t get_orientation(void){
+uint8_t get_orientation(void)
+{
 	return orientation;
 }
 
-void set_movement_state(uint8_t state_to_set){
+void set_movement_state(uint8_t state_to_set)
+{
 	movement_state = state_to_set;
 }
 
-void management_movement_start(void){
+void management_movement_start(void)
+{
 	chThdCreateStatic(waThdMovement, sizeof(waThdMovement), NORMALPRIO, Movement, NULL);
 }
 

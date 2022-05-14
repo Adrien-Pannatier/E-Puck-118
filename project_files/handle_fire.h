@@ -2,7 +2,7 @@
  * handle_fire.h
  *
  *  Created on: 21 avr. 2022
- *      Author: Axel Praplan, Adrien Pannatier
+ *     Authors: Axel Praplan, Adrien Pannatier
  *
  *  Functions to control the alarm and the air blower module
  */

@@ -265,8 +265,8 @@ static const melody_t added_alarms[NB_ADDED_ALARMS] = {
 };
 
 static THD_WORKING_AREA(waPlayAddAlarmThd, 128);
-static THD_FUNCTION(PlayAddAlarmThd, arg) {
-
+static THD_FUNCTION(PlayAddAlarmThd, arg)
+{
   chRegSetThreadName("PlayAddAlarm Thd");
 
 	(void)arg;
@@ -292,11 +292,6 @@ static THD_FUNCTION(PlayAddAlarmThd, arg) {
 
 			playNote(alarm->notes[thisNote], noteDuration);
 
-			// to distinguish the notes, set a minimum time between them.
-			// the note's duration + 30% seems to work well:
-//			uint16_t pauseBetweenNotes = (uint16_t)(noteDuration * 1.30);
-//			chThdSleepMilliseconds(pauseBetweenNotes);
-
 		}
     addplay = false;
     //signals to the threads waiting that the melody has finished
@@ -306,34 +301,40 @@ static THD_FUNCTION(PlayAddAlarmThd, arg) {
 
 /****************************PUBLIC FUNCTIONS*************************************/
 
-void playAddedMelody(added_song_selection_t choice, play_melody_option_t option){
+void playAddedMelody(added_song_selection_t choice, play_melody_option_t option)
+{
 	playMelody(EXTERNAL_SONG, option, &added_melodies[choice]);
 }
 
-void playAddedAlarmStart(void){
-
+void playAddedAlarmStart(void)
+{
 	//create the thread
 	chThdCreateStatic(waPlayAddAlarmThd, sizeof(waPlayAddAlarmThd), NORMALPRIO, PlayAddAlarmThd, NULL);
 }
 
-void playAddedAlarm(added_alarm_selection_t choice, play_melody_option_t option){
+void playAddedAlarm(added_alarm_selection_t choice, play_melody_option_t option)
+{
 
   melody_t* alarm = NULL;
 
   alarm = &added_alarms[choice];
 
   //SIMPLE_PLAY case
-  if(option == ML_SIMPLE_PLAY){
+  if(option == ML_SIMPLE_PLAY)
+  {
     //if the reference is NULL, then the thread is already running
     //when the reference becomes not NULL, it means the thread is waiting
-    if(play_add_alarm_ref != NULL){
+    if(play_add_alarm_ref != NULL)
+    {
       addplay = true;
       //tell the thread to play the alarm given
       chThdResume(&play_add_alarm_ref, (msg_t) alarm);
     }
   }//FORCE_CHANGE or WAIT_AND_CHANGE cases
-  else{
-    if(option == ML_FORCE_CHANGE){
+  else
+  {
+    if(option == ML_FORCE_CHANGE)
+    {
       stopCurrentAlarm();
     }
     waitAlarmHasFinished();
@@ -343,13 +344,16 @@ void playAddedAlarm(added_alarm_selection_t choice, play_melody_option_t option)
   }
 }
 
-void stopCurrentAlarm(void){
+void stopCurrentAlarm(void)
+{
     addplay = false;
 }
 
-void waitAlarmHasFinished(void) {
+void waitAlarmHasFinished(void)
+{
   //if a melody is playing
-  if(play_add_alarm_ref == NULL){
+  if(play_add_alarm_ref == NULL)
+  {
     //waits until the current melody is finished
     chMtxLock(&play_add_alarm_lock);
     chCondWait(&play_add_alarm_condvar);

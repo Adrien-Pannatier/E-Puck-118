@@ -14,28 +14,33 @@
 
 /**************************PUBLIC FUNCTIONS***********************************/
 
-bool check_for_fire(void){
+bool check_for_fire(void)
+{
 	//turns on the camera, check then turns of
 	start_image_processing();
 	chThdSleepMilliseconds(500);
 	stop_image_processing();
 
-	if(get_fire_position() == NOT_FOUND){
+	if(get_fire_position() == NOT_FOUND)
+	{
 		return false;
 	}
-	else{
+	else
+	{
 		return true;
 	}
 }
 
-void deploy_antifire_measures(void){
+void deploy_antifire_measures(void)
+{
 	//activates the front led pin which turns on the air blower
 	set_front_led(1);
 	//turns on the siren
-	//playAddedAlarm(BASEBALL,ML_SIMPLE_PLAY);
+	playAddedAlarm(BASEBALL,ML_SIMPLE_PLAY);
 }
 
-void stop_antifire_measures(void){
+void stop_antifire_measures(void)
+{
 	//turns off the air blower
 	set_front_led(0);
 	//stops the melody
