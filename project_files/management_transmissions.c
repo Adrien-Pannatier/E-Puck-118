@@ -77,7 +77,62 @@ static uint16_t buffer_store_counter = 0;
 static uint16_t buffer_send_counter = 0;
 static bool reset_counter = false;
 
+//Private functions
+
+/**
+ * @brief	Store a value in the transmission buffer
+ * @details The function writes "START" before sending the informations.
+ *
+ * @param mapping_transmission     The parameter to store.
+ */
 void SendUint8ToComputer(uint8_t* data, uint16_t size);
+
+/**
+ * @brief	Send an array of Uint8 to sequential stream
+ *
+ *
+ * @param data     A pointer to the informations to send.
+ * @param size     The size of elements to send.
+ */
+void store_buffer(uint8_t mapping_transmission);
+
+//Thread Transmission
+
+static THD_WORKING_AREA(waThdTransmissions, 128);
+static THD_FUNCTION(Transmissions, arg) {
+
+    chRegSetThreadName(__FUNCTION__);
+    (void)arg;
+
+    while(1){
+
+    	//Transmission send
+
+    	//Check if there is something to send in the buffer
+    	if(buffer_send_counter < buffer_store_counter || reset_counter)
+    	{
+
+			//Send to computer
+    		SendUint8ToComputer(&buffer_transmission[buffer_transmission_ptr_send], DATA_SIZE);
+
+    		chprintf((BaseSequentialStream *)&SD3, "START %.u \n\r", buffer_transmission[buffer_transmission_ptr_send]);
+
+			//Incr and reset buffer ptr
+			buffer_transmission_ptr_send++;
+			buffer_send_counter++;
+			if(buffer_transmission_ptr_send == BUFFER_SIZE) buffer_transmission_ptr_send = 0;
+			if(buffer_send_counter == MAX_COUNTER){
+				buffer_send_counter = 0;
+				reset_counter = false;
+			}
+
+    	}
+
+    	chThdSleepMilliseconds(100);
+    }
+}
+
+/***************************INTERNAL FUNCTIONS************************************/
 
 void store_buffer(uint8_t mapping_transmission){
 
@@ -94,6 +149,18 @@ void store_buffer(uint8_t mapping_transmission){
 	}
 
 }
+
+void SendUint8ToComputer(uint8_t* data, uint16_t size)
+{
+	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)"START", 5);
+//	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)&size, sizeof(uint16_t));
+	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)data, size);
+}
+
+/*************************END INTERNAL FUNCTIONS**********************************/
+
+
+/****************************PUBLIC FUNCTIONS*************************************/
 
 void send_orientation(uint16_t orientation){
 
@@ -129,57 +196,8 @@ void send_fire(void){
 	store_buffer(FIRE_DETECTED);
 }
 
-void SendUint8ToComputer(uint8_t* data, uint16_t size)
-{
-	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)"START", 5);
-//	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)&size, sizeof(uint16_t));
-	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)data, size);
-}
-
-
-static THD_WORKING_AREA(waThdTransmissions, 128);
-static THD_FUNCTION(Transmissions, arg) {
-
-    chRegSetThreadName(__FUNCTION__);
-    (void)arg;
-
-//    systime_t time;
-//
-//    for(int i = 0; i < DATA_SIZE; i++){
-//    	data_out[i] = 0;
-//    }
-
-    while(1){
-
-//    	time = chVTGetSystemTime();
-
-    	//Transmission send
-
-    	//Check if there is something to send in the buffer
-    	if(buffer_send_counter < buffer_store_counter || reset_counter)
-    	{
-
-			//Send to computer
-    		SendUint8ToComputer(&buffer_transmission[buffer_transmission_ptr_send], DATA_SIZE);
-
-    		chprintf((BaseSequentialStream *)&SD3, "START %.u \n\r", buffer_transmission[buffer_transmission_ptr_send]);
-
-			//Incr and reset buffer ptr
-			buffer_transmission_ptr_send++;
-			buffer_send_counter++;
-			if(buffer_transmission_ptr_send == BUFFER_SIZE) buffer_transmission_ptr_send = 0;
-			if(buffer_send_counter == MAX_COUNTER){
-				buffer_send_counter = 0;
-				reset_counter = false;
-			}
-
-    	}
-
-    	chThdSleepMilliseconds(100);
-//    	chThdSleepUntilWindowed(time, time + MS2ST(200));
-    }
-}
-
 void management_transmissions_start(void){
 	   chThdCreateStatic(waThdTransmissions, sizeof(waThdTransmissions), NORMALPRIO -1, Transmissions, NULL);
 }
+
+/**************************END PUBLIC FUNCTIONS***********************************/

@@ -19,14 +19,19 @@
 #define IR6					5
 #define IR7					6
 #define IR8					7
+#define NON_VALID			0
 
-#define MAX_INTENSITY		3500.0
+#define MAX_INTENSITY		4000
 #define NOISE_IR			35
-#define MAX_RANGE_IR		100 		//[mm]
+#define ERROR_IR_MM			10			//[mm]
+#define MAX_RANGE_IR		120 		//[mm]
 
-void management_proximity_start(void);
-
-//return the distance of the IR sensor
+/**
+ * @brief	Return the distance of a sensor to an object in mm
+ *
+ * @param IR_number     number of the IR sensor.
+ * @retval uint8_t		The distance in mm.
+ */
 uint8_t get_distance_IR_mm(uint8_t IR_number);
 
 #endif /* PROXIMITY_H_ */

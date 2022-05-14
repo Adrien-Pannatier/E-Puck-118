@@ -26,6 +26,7 @@ void send_orientation(uint16_t orientation);
 /**
  * @brief Sends corridor surrounding to computer
  *
+ * @param orientation     orientation to send (Modulo 360°).
  */
 void send_corridor(void);
 
@@ -42,8 +43,11 @@ void send_moving_in_intersection(void);
 void send_crossing(bool opening_right, bool opening_front, bool opening_left);
 
 /**
- * @brief Sends fire existance to computer
+ * @brief Sends fire existence to computer
  *
+ * @param opening_right     bool opening on right or not.
+ * @param opening_front     bool opening on front or not.
+ * @param opening_left      bool opening on left or not.
  */
 void send_fire(void);
 

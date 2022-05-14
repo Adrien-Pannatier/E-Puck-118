@@ -20,7 +20,7 @@ bool check_for_fire(void){
 	chThdSleepMilliseconds(500);
 	stop_image_processing();
 
-	if(get_line_position() == NOT_FOUND){
+	if(get_fire_position() == NOT_FOUND){
 		return false;
 	}
 	else{

@@ -4,7 +4,7 @@ EPUCK-118 PROJECT
 Description
 -----------
 
-As a part of the Robotics Project 2022 of the course MICRO-31,
+As a part of the Robotics Project 2022 of the course MICRO-315,
 we were asked to design an application with an E-Puck2 robot from GCtronic.
 
 Using this robot, we created a miniaturised firetruck which purpose is to find fire sources in a maze

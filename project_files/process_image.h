@@ -39,6 +39,6 @@ void stop_image_processing(void);
  * @return	int value of the position on the line
  *
  */
-uint16_t get_line_position(void);
+uint16_t get_fire_position(void);
 
 #endif /* PROCESS_IMAGE_H */

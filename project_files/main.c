@@ -24,6 +24,7 @@
 #include "chmtx.h"
 #include "msgbus/messagebus.h"
 #include "sensors/proximity.h"
+#include "sensors/VL53L0X/VL53L0X.h"
 #include "management_proximity.h"
 
 #include "usbcfg.h"
@@ -69,10 +70,17 @@ int main(void)
     po8030_start();
     process_image_start();
 
+    //Sensor clock init
+
+    RCC->AHB1ENR    |= RCC_AHB1ENR_GPIOBEN;
+    RCC->AHB1ENR    |= RCC_AHB1ENR_GPIOCEN;
+
     //IR
     messagebus_init(&bus, &bus_lock, &bus_condvar);
     proximity_start();
-    management_proximity_start();
+    calibrate_ir();
+    VL53L0X_start();
+
 
     //Transmission
     usb_start();

@@ -30,74 +30,19 @@
 #define CERTAINTY_COUNTER		6
 
 
-static uint16_t line_position = NOT_FOUND;
+static uint16_t fire_position = NOT_FOUND;
 static bool image_processing = false;
 static bool image_capture = false;
 
-uint16_t detection_fire(uint8_t *buffer){
+//Private functions
 
-	uint16_t i = 0, begin = 0, end = 0;
-	bool stop = false, wrong_line = false, line_not_found = false;
-
-	do{
-		wrong_line = false;
-		//search for a begin
-		while(stop == false && i < (IMAGE_BUFFER_SIZE - WIDTH_SLOPE))
-		{
-			//the slope must at least be WIDTH_SLOPE wide and is compared
-		    //to the mean of the image
-		    if(buffer[i] < FIRE_THRESHOLD && buffer[i+WIDTH_SLOPE] > FIRE_THRESHOLD)
-		    {
-		        begin = i;
-		        stop = 1;
-		    }
-		    i++;
-		}
-		//if a begin was found, search for an end
-		if (i < (IMAGE_BUFFER_SIZE - WIDTH_SLOPE) && begin)
-		{
-		    stop = false;
-
-		    while(stop == false && i < IMAGE_BUFFER_SIZE)
-		    {
-		        if(buffer[i] < FIRE_THRESHOLD && buffer[i-WIDTH_SLOPE] > FIRE_THRESHOLD)
-		        {
-		            end = i;
-		            stop = 1;
-		        }
-		        i++;
-		    }
-		    //if an end was not found
-		    if (i > IMAGE_BUFFER_SIZE || !end)
-		    {
-		        line_not_found = 1;
-		    }
-		}
-		else//if no begin was found
-		{
-		    line_not_found = 1;
-		}
-
-		//if a line too small has been detected, continues the search
-		if(!line_not_found && (end-begin) < MIN_FIRE_WIDTH){
-			i = end;
-			begin = 0;
-			end = 0;
-			stop = false;
-			wrong_line = true;
-		}
-	}while(wrong_line);
-
-	if(line_not_found){
-		begin = 0;
-		end = 0;
-		line_position = NOT_FOUND;
-	}else{
-		line_position = (begin + end)/2; //gives the line position.
-	}
-
-	return line_position;
-}
+/**
+ * @brief 	Perform an image analysis to find if there is a fire
+ *
+ * @return	int value of the position on the fire, or NOT_FOUND if no fire was found
+ *
+ */
+uint16_t detection_fire(uint8_t *buffer);
 
 //semaphore
 static BSEMAPHORE_DECL(image_ready_sem, TRUE);
@@ -108,7 +53,7 @@ static THD_FUNCTION(CaptureImage, arg) {
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
 
-	//Takes pixels 0 to IMAGE_BUFFER_SIZE of the line 10 + 11 (minimum 2 lines because reasons)
+	//Takes pixels 0 to IMAGE_BUFFER_SIZE of the fire 10 + 11 (minimum 2 fires because reasons)
 	po8030_advanced_config(FORMAT_RGB565, 0, 225, IMAGE_BUFFER_SIZE, 2, SUBSAMPLING_X1, SUBSAMPLING_X1);
 	dcmi_enable_double_buffering();
 	dcmi_set_capture_mode(CAPTURE_ONE_SHOT);
@@ -145,7 +90,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 	uint8_t blue_value;
 	bool un_sur_deux = false;
 
-	uint16_t new_line_position = NOT_FOUND;
+	uint16_t new_fire_position = NOT_FOUND;
 	uint8_t counter = 0;
 
     while(1){
@@ -175,27 +120,99 @@ static THD_FUNCTION(ProcessImage, arg) {
 			}
 
 			//Detection fire with certainty counter to assure no fire
-			new_line_position = detection_fire(image);
+			new_fire_position = detection_fire(image);
 
-			if(new_line_position == NOT_FOUND){
+			if(new_fire_position == NOT_FOUND){
 				if(counter >= CERTAINTY_COUNTER){
-					line_position = NOT_FOUND;
+					fire_position = NOT_FOUND;
 				}
 				counter++;
 			}
 			else{
-				line_position = new_line_position;
+				fire_position = new_fire_position;
 				counter = 0;
 			}
 
 
-//			chprintf((BaseSequentialStream *)&SD3, "Pos = %.u \n\n\r", line_position);
-			//SendUint8ToComputer(image, IMAGE_BUFFER_SIZE);
+//			chprintf((BaseSequentialStream *)&SD3, "Pos = %.u \n\n\r", fire_position);
+//			SendUint8ToComputer(image, IMAGE_BUFFER_SIZE);
     	}
 
     	chThdSleepMilliseconds(20);
     }
 }
+
+/***************************INTERNAL FUNCTIONS************************************/
+
+uint16_t detection_fire(uint8_t *buffer){
+
+	uint16_t i = 0, begin = 0, end = 0;
+	bool stop = false, wrong_fire = false, fire_not_found = false;
+
+	do{
+		wrong_fire = false;
+		//search for a begin
+		while(stop == false && i < (IMAGE_BUFFER_SIZE - WIDTH_SLOPE))
+		{
+			//the slope must at least be WIDTH_SLOPE wide and is compared
+		    //to the mean of the image
+		    if(buffer[i] < FIRE_THRESHOLD && buffer[i+WIDTH_SLOPE] > FIRE_THRESHOLD)
+		    {
+		        begin = i;
+		        stop = 1;
+		    }
+		    i++;
+		}
+		//if a begin was found, search for an end
+		if (i < (IMAGE_BUFFER_SIZE - WIDTH_SLOPE) && begin)
+		{
+		    stop = false;
+
+		    while(stop == false && i < IMAGE_BUFFER_SIZE)
+		    {
+		        if(buffer[i] < FIRE_THRESHOLD && buffer[i-WIDTH_SLOPE] > FIRE_THRESHOLD)
+		        {
+		            end = i;
+		            stop = 1;
+		        }
+		        i++;
+		    }
+		    //if an end was not found
+		    if (i > IMAGE_BUFFER_SIZE || !end)
+		    {
+		        fire_not_found = 1;
+		    }
+		}
+		else//if no begin was found
+		{
+		    fire_not_found = 1;
+		}
+
+		//if a fire too small has been detected, continues the search
+		if(!fire_not_found && (end-begin) < MIN_FIRE_WIDTH){
+			i = end;
+			begin = 0;
+			end = 0;
+			stop = false;
+			wrong_fire = true;
+		}
+	}while(wrong_fire);
+
+	if(fire_not_found){
+		begin = 0;
+		end = 0;
+		fire_position = NOT_FOUND;
+	}else{
+		fire_position = (begin + end)/2; //gives the fire position.
+	}
+
+	return fire_position;
+}
+
+/*************************END INTERNAL FUNCTIONS**********************************/
+
+
+/****************************PUBLIC FUNCTIONS*************************************/
 
 void start_image_processing(void){
 	image_processing = true;
@@ -207,8 +224,8 @@ void stop_image_processing(void){
 	image_capture = false;
 }
 
-uint16_t get_line_position(void){
-	return line_position;
+uint16_t get_fire_position(void){
+	return fire_position;
 }
 
 
@@ -216,3 +233,5 @@ void process_image_start(void){
 	chThdCreateStatic(waProcessImage, sizeof(waProcessImage), LOWPRIO, ProcessImage, NULL);
 	chThdCreateStatic(waCaptureImage, sizeof(waCaptureImage), LOWPRIO, CaptureImage, NULL);
 }
+
+/**************************END PUBLIC FUNCTIONS***********************************/

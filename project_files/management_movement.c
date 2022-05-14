@@ -55,12 +55,11 @@
 
 
 //PD parameters
-#define ANTI_WINDUP						5000
 #define KP								1.65
 #define KD								0.06
 
 
-//a changer
+//DEV
 #define VL53L0X_OPENING					120												//distance considered for opening [mm]
 #define VL53L0X_OBSTRUCTED				70												//distance considered for obstructed [mm]
 
@@ -132,6 +131,14 @@ void followind_corridor(void);
 void moving_in_intersection(void);
 
 /**
+ * @brief 			Performs the reverse of the last movements made by the robot in case of incorrect movement
+ *
+ * @retval true		Once the trajectory is corrected.
+ * @retval false	While the trajectory is not fully corrected.
+ */
+bool trajectory_correction(void);
+
+/**
  * @brief	Update the orientation in memory and send the communication for the drawing
  *
  * @param rotation_angle     angle of rotation in deg.
@@ -158,7 +165,7 @@ void analysing_intersection(void);
 void join_corridor(void);
 
 /**
- * @brief 	Turn to follow the right wall
+ * @brief 	Turn to the desired direction
  *
  */
 void turn_towards_path(void);
@@ -176,12 +183,25 @@ void fighting_fire(void);
 void searching_for_fire(void);
 
 /**
- * @brief 	Restoring the previously saved orientation
+ * @brief 			Chose the right direction (follow right wall)
  *
  */
-void reseting_orientation(void);
+void choosing_direction(void);
+
+/**
+ * @brief 			Check if the end of the maze is reached
+ *
+ * @retval true		if the robot is out of the maze.
+ * @retval false	if it is still inside the maze.
+ */
 bool check_end_of_maze(void);
+
+/**
+ * @brief 			celebrate if at the end of the maze
+ *
+ */
 void end_of_maze_celebration(void);
+
 
 //Thread of motion management
 
@@ -191,11 +211,7 @@ static THD_FUNCTION(Movement, arg) {
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
 
-//    systime_t time;
-
     while(1){
-
-//    	time = chVTGetSystemTime();
 
     	//call of all motion-related functions based on the current state of the robot
 
@@ -208,10 +224,7 @@ static THD_FUNCTION(Movement, arg) {
 									opening_front = true;
 									orientation = NORTH;
 									orientation_before_check = NORTH;
-									desired_orientation = NORTH;
-//									if(check_for_fire()) deploy_antifire_measures();
-//									else stop_antifire_measures();
-       								break;
+									desired_orientation = NORTH; break;
 
 
     	case MOVING: 				followind_corridor(); break;
@@ -222,18 +235,21 @@ static THD_FUNCTION(Movement, arg) {
 
     	case ROTATING: 				analysing_intersection(); break;
 
+
     	case LEAVING_INTERSECTION: 	join_corridor(); break;
+
 
     	case SEARCHING_FIRE:		searching_for_fire(); break;
 
+
     	case FIRE_FIGHTING: 		fighting_fire(); break;
+
 
     	case END_OF_MAZE:			end_of_maze_celebration(); break;
 
+
     	default: 					movement_state = STOP; break;
     	}
-
-//    	chprintf((BaseSequentialStream *)&SD3, "Thd time = %d\n\n\r", chVTGetSystemTime()-time);
 
     	chThdSleepMilliseconds(50);
     }
@@ -404,7 +420,6 @@ bool corridor_found(void){
 
 	//If wall found on both sides
 	if(get_calibrated_prox(IR3) >= NOISE_IR && get_calibrated_prox(IR6) >= NOISE_IR )
-//			 && get_calibrated_prox(IR2) >= NOISE_IR && get_calibrated_prox(IR7) >= NOISE_IR)
 		{
 			if(certainty_counter >= CERTAINTY)
 			{
@@ -418,10 +433,6 @@ bool corridor_found(void){
 	return false;
 }
 
-/**
- * @brief 			Performs the reverse of the last movements made by the robot in case of incorrect movement
- *
- */
 bool trajectory_correction(void){
 
 	static uint8_t counter = 0;
@@ -615,10 +626,6 @@ void join_corridor(void){
 //			clear_leds();
 }
 
-/**
- * @brief 			Chose the right direction (follow right wall)
- *
- */
 void choosing_direction(void){
 	if(opening_right)			desired_orientation = orientation_before_check + RIGHT_90;
 	else if (opening_front)		desired_orientation = orientation_before_check;
@@ -695,10 +702,6 @@ void fighting_fire(void){
 	movement_state = SEARCHING_FIRE;
 }
 
-/**
- * @brief 			Turn into the right direction to follow the maze
- *
- */
 void turn_towards_path(void){
 
 	//Choose the right direction
@@ -712,12 +715,6 @@ void turn_towards_path(void){
 	}
 }
 
-/**
- * @brief 			Check if the end of the maze is reached
- *
- * @retval true		if the robot is out of the maze.
- * @retval false	if it is still inside the maze.
- */
 bool check_end_of_maze(void){
 	if(opening_front && opening_left && opening_right){
 		if(/*get_calibrated_prox(IR4) <= NOISE_IR && get_calibrated_prox(IR5) <= NOISE_IR &&*/
@@ -729,10 +726,6 @@ bool check_end_of_maze(void){
 	return false;
 }
 
-/**
- * @brief 			celebrate if at the end of the maze
- *
- */
 void end_of_maze_celebration(void){
 	//playAddedMelody(ROCKY,ML_SIMPLE_PLAY);
 
