@@ -9,11 +9,6 @@ extern "C" {
 #include "msgbus/messagebus.h"
 #include "parameter/parameter.h"
 
-/* Constants for camera*/
-#define IMAGE_BUFFER_SIZE		640
-#define WIDTH_SLOPE				5
-#define MIN_FIRE_WIDTH			40
-
 /** Robot wide IPC bus. */
 extern messagebus_t bus;
 
