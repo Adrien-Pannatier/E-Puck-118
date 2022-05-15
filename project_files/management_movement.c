@@ -27,7 +27,6 @@
 
 #include "added_melodies.h"
 
-
 //Moving parameters
 #define CERTAINTY						3												//minimum occurrence of a measure to have a good confidence
 #define NULL_POS						0												//Position zero for motor counter
@@ -752,7 +751,7 @@ bool check_end_of_maze(void)
 
 void end_of_maze_celebration(void)
 {
-	playAddedMelody(GHOST_BUSTERS,ML_SIMPLE_PLAY);
+	playAddedMelody(GHOSTBUSTERS,ML_SIMPLE_PLAY);
 
 	rotate(LEFT_360);
 	rotate(RIGHT_360);

@@ -43,8 +43,6 @@ void stop_antifire_measures(void)
 {
 	//turns off the air blower
 	set_front_led(0);
-	//stops the melody
-	//stopCurrentMelody();
 }
 
 /**************************END PUBLIC FUNCTIONS***********************************/
