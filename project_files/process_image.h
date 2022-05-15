@@ -2,7 +2,7 @@
  * process_image.h
  *
  *  Created on: 18 avr. 2022
- *      Authors: Axel Praplan, Adrien Pannatier
+ *     Authors: Axel Praplan, Adrien Pannatier
  *
  *  Thread and function to read images and detect high intensity peak
  *

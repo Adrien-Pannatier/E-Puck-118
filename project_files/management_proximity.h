@@ -2,7 +2,9 @@
  * Proximity.h
  *
  *  Created on: 8 avr. 2022
- *      Author: APrap
+ *     Authors: Axel Praplan, Adrien Pannatier
+ *
+ *  Functions and defines to use the IR captors, linearised
  */
 
 #ifndef PROXIMITY_H_

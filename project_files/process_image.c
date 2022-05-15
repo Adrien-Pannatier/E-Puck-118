@@ -2,7 +2,7 @@
  * process_image.c
  *
  *  Created on: 18 avr. 2022
- *      Authors: Axel Praplan, Adrien Pannatier
+ *     Authors: Axel Praplan, Adrien Pannatier
  *
  *  Thread and function to read images and detect high intensity peak
  *
@@ -48,8 +48,8 @@ uint16_t detection_fire(uint8_t *buffer);
 static BSEMAPHORE_DECL(image_ready_sem, TRUE);
 
 static THD_WORKING_AREA(waCaptureImage, 256);
-static THD_FUNCTION(CaptureImage, arg) {
-
+static THD_FUNCTION(CaptureImage, arg)
+{
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
 
@@ -59,8 +59,8 @@ static THD_FUNCTION(CaptureImage, arg) {
 	dcmi_set_capture_mode(CAPTURE_ONE_SHOT);
 	dcmi_prepare();
 
-    while(1){
-
+    while(1)
+    {
     	if(image_capture == true)
     	{
 			//starts a capture
@@ -77,11 +77,10 @@ static THD_FUNCTION(CaptureImage, arg) {
 
 
 static THD_WORKING_AREA(waProcessImage, 1024);
-static THD_FUNCTION(ProcessImage, arg) {
-
+static THD_FUNCTION(ProcessImage, arg)
+{
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
-
 
 	uint8_t *img_buff_ptr;
 	uint8_t image[IMAGE_BUFFER_SIZE] = {0};
@@ -93,11 +92,10 @@ static THD_FUNCTION(ProcessImage, arg) {
 	uint16_t new_fire_position = NOT_FOUND;
 	uint8_t counter = 0;
 
-    while(1){
-
+    while(1)
+    {
     	if(image_processing == true)
     	{
-
 			//waits until an image has been captured
 			chBSemWait(&image_ready_sem);
 			//gets the pointer to the array filled with the last image in RGB565
@@ -118,24 +116,22 @@ static THD_FUNCTION(ProcessImage, arg) {
 					image[i] = red_value + green_value + blue_value;
 				}
 			}
-
 			//Detection fire with certainty counter to assure no fire
 			new_fire_position = detection_fire(image);
 
-			if(new_fire_position == NOT_FOUND){
-				if(counter >= CERTAINTY_COUNTER){
+			if(new_fire_position == NOT_FOUND)
+			{
+				if(counter >= CERTAINTY_COUNTER)
+				{
 					fire_position = NOT_FOUND;
 				}
 				counter++;
 			}
-			else{
+			else
+			{
 				fire_position = new_fire_position;
 				counter = 0;
 			}
-
-
-//			chprintf((BaseSequentialStream *)&SD3, "Pos = %.u \n\n\r", fire_position);
-//			SendUint8ToComputer(image, IMAGE_BUFFER_SIZE);
     	}
 
     	chThdSleepMilliseconds(20);
@@ -144,12 +140,13 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 /***************************INTERNAL FUNCTIONS************************************/
 
-uint16_t detection_fire(uint8_t *buffer){
-
+uint16_t detection_fire(uint8_t *buffer)
+{
 	uint16_t i = 0, begin = 0, end = 0;
 	bool stop = false, wrong_fire = false, fire_not_found = false;
 
-	do{
+	do
+	{
 		wrong_fire = false;
 		//search for a begin
 		while(stop == false && i < (IMAGE_BUFFER_SIZE - WIDTH_SLOPE))
@@ -189,23 +186,27 @@ uint16_t detection_fire(uint8_t *buffer){
 		}
 
 		//if a fire too small has been detected, continues the search
-		if(!fire_not_found && (end-begin) < MIN_FIRE_WIDTH){
+		if(!fire_not_found && (end-begin) < MIN_FIRE_WIDTH)
+		{
 			i = end;
 			begin = 0;
 			end = 0;
 			stop = false;
 			wrong_fire = true;
 		}
-	}while(wrong_fire);
+	}
+	while(wrong_fire);
 
-	if(fire_not_found){
+	if(fire_not_found)
+	{
 		begin = 0;
 		end = 0;
 		fire_position = NOT_FOUND;
-	}else{
+	}
+	else
+	{
 		fire_position = (begin + end)/2; //gives the fire position.
 	}
-
 	return fire_position;
 }
 

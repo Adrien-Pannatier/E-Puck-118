@@ -2,7 +2,9 @@
  * management_proximity.c
  *
  *  Created on: 8 avr. 2022
- *      Author: Axel Praplan, Adrien Pannatier
+ *     Authors: Axel Praplan, Adrien Pannatier
+ *
+ *  Functions and defines to use the IR captors, linearised
  */
 
 #include <management_proximity.h>
@@ -10,7 +12,7 @@
 #include "sensors/proximity.h"
 #include "math.h"
 
-//Private interpolation value for linearization of IR value
+//Private interpolation value for linearisation of IR value
 #define MUL_VAL			1324.6
 #define POWER			-0.79
 
@@ -24,8 +26,8 @@ static uint8_t table_lin_IR[600];
  * @brief 			Fill up the correspondence table to linearize the IR sensors
  *
  */
-void fill_correspondence_table(void){
-
+void fill_correspondence_table(void)
+{
     //file table lin IR sensors
     for(int i = 0; i < 30; i++)
     {
@@ -42,8 +44,8 @@ void fill_correspondence_table(void){
 
 /****************************PUBLIC FUNCTIONS*************************************/
 
-uint8_t get_distance_IR_mm(uint8_t IR_number){
-
+uint8_t get_distance_IR_mm(uint8_t IR_number)
+{
 	uint16_t intensity = get_calibrated_prox(IR_number);
 
 	//Check if IR_number is a valid number, return the distance in mm from the transformation table
