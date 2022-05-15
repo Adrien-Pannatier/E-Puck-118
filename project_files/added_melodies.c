@@ -95,8 +95,8 @@ static const uint16_t rocky_melody[] = {
 	NOTE_A4,0,
 };
 
-//GHOST_BUSTERS song
-static const uint16_t ghost_buster_song[] = {
+//GHOSTBUSTERS song
+static const uint16_t ghostbuster_song[] = {
 	NOTE_D4, NOTE_D4, NOTE_FS4, NOTE_D4, NOTE_E4,
 	NOTE_C4, 0, 0, NOTE_D4, NOTE_D4, NOTE_D4,
 	NOTE_D4, NOTE_C4, NOTE_D4, 0
@@ -197,8 +197,8 @@ static const float rocky_tempo[] = {
 
 };
 
-//GHOST_BUSTERS tempo
-static const float ghost_buster_tempo[] = {
+//GHOSTBUSTERS tempo
+static const float ghostbuster_tempo[] = {
 	16, 16, 8, 8, 8,
 	4, 16, 16, 16, 16, 16,
 	16, 8, 4, 4
@@ -235,11 +235,11 @@ static const melody_t added_melodies[NB_ADDED_SONGS] = {
     .tempo = rocky_tempo,
     .length = sizeof(rocky_melody)/sizeof(uint16_t),
   },
-  //GHOST BUSTER
+  //GHOSTBUSTER
   {
-    .notes = ghost_buster_song,
-    .tempo = ghost_buster_tempo,
-    .length = sizeof(ghost_buster_song)/sizeof(uint16_t),
+    .notes = ghostbuster_song,
+    .tempo = ghostbuster_tempo,
+    .length = sizeof(ghostbuster_song)/sizeof(uint16_t),
   },
 };
 

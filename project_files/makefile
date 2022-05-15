@@ -3,10 +3,10 @@
 #Simply adapt the lines below to be able to compile
 
 # Define project name here
-PROJECT = Projet_Robotique_2022
+PROJECT = E-Puck-118
 
 #Define path to the e-puck2_main-processor folder
-GLOBAL_PATH = ../lib/e-puck2_main-processor
+GLOBAL_PATH = ../../lib/e-puck2_main-processor
 
 #Source files to include
 CSRC += ./main.c \

@@ -38,7 +38,7 @@
 #define SPEED							6.0												//[cm/s]
 #define SPEED_STEP						(SPEED*NSTEP_ONE_TURN/WHEEL_PERIMETER)			//[step/s]
 #define ROTATIONAL_SPEED				280												//[step]
-#define STEP_TO_REACH_THE_MIDDLE		300											 	//[step]
+#define STEP_TO_REACH_THE_MIDDLE		320											 	//[step]
 #define ZERO_SPEED						0												//[step]
 #define HISTORY_SIZE					40												//Size of navigation history buffer (store history of movements)
 
@@ -508,7 +508,7 @@ void update_orientation(int rotation_angle)
 	else if(orientation < MIN_ANGLE) orientation += MAX_ANGLE;
 
 	//Send new orientation for mapping
-	send_orientation(orientation)
+	send_orientation(orientation);
 }
 
 void rotate(int rotation_angle)
