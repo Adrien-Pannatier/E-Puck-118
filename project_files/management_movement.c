@@ -87,6 +87,20 @@ const float incr = 0.05;
 //Private functions
 
 /**
+ * @brief 	Absolute value int32
+ *
+ * @retval int32_t	the absolute value of value.
+ */
+int32_t absolute_value_int32(int32_t value);
+
+/**
+ * @brief 	Absolute value int16
+ *
+ * @retval int16_t	the absolute value of value.
+ */
+int16_t absolute_value_int16(int16_t value);
+
+/**
  * @brief 			Check for a side opening
  *
  * @retval true		if there is an opening on at least one side.
@@ -245,19 +259,10 @@ static THD_FUNCTION(Movement, arg) {
 //DEV
 //ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
-int16_t absolute_value_int16(int16_t value)
-{
-	if(value < 0) value = -value;
-	return value;
-}
-
-int32_t absolute_value_int32(int32_t value)
-{
-	if(value < 0) value = -value;
-	return value;
-}
-
-
+/**
+ * @brief 	Selector with no limit for PID tune
+ *
+ */
 int infinity_selector(void)
 {
 	static int last_pos = 0;
@@ -287,6 +292,10 @@ int infinity_selector(void)
 	return(0);
 }
 
+/**
+ * @brief 	PID tuning with selector and user button
+ *
+ */
 void PID_tuning(void)
 {
 	static int state = 0;
@@ -315,6 +324,18 @@ void PID_tuning(void)
 
 /***************************INTERNAL FUNCTIONS************************************/
 
+
+int16_t absolute_value_int16(int16_t value)
+{
+	if(value < 0) value = -value;
+	return value;
+}
+
+int32_t absolute_value_int32(int32_t value)
+{
+	if(value < 0) value = -value;
+	return value;
+}
 
 void stop_movement(void)
 {
@@ -508,7 +529,7 @@ void update_orientation(int rotation_angle)
 	else if(orientation < MIN_ANGLE) orientation += MAX_ANGLE;
 
 	//Send new orientation for mapping
-	send_orientation(orientation)
+	send_orientation(orientation);
 }
 
 void rotate(int rotation_angle)
@@ -733,7 +754,7 @@ bool check_end_of_maze(void)
 
 void end_of_maze_celebration(void)
 {
-	playAddedMelody(GHOSTBUSTERS,ML_SIMPLE_PLAY);
+	playAddedMelody(GHOST_BUSTERS,ML_SIMPLE_PLAY);
 
 	rotate(LEFT_360);
 	rotate(RIGHT_360);

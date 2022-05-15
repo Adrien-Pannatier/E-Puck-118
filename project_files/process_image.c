@@ -21,6 +21,15 @@
 
 #include "leds.h"
 
+
+/* Constants for camera*/
+#define IMAGE_BUFFER_SIZE		640
+#define WIDTH_SLOPE				5
+#define MIN_FIRE_WIDTH			40
+#define IMAGE_HEIGHT			2
+#define IMAGE_X0				0
+#define IMAGE_VERTICAL_POS		225
+
 #define MASK_BLUE_L				0b00011111
 #define MASK_GREEN_L   			0b11100000
 #define MASK_GREEN_H			0b00000111
@@ -53,8 +62,8 @@ static THD_FUNCTION(CaptureImage, arg)
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
 
-	//Takes pixels 0 to IMAGE_BUFFER_SIZE of the fire 10 + 11 (minimum 2 fires because reasons)
-	po8030_advanced_config(FORMAT_RGB565, 0, 225, IMAGE_BUFFER_SIZE, 2, SUBSAMPLING_X1, SUBSAMPLING_X1);
+	//Takes pixels X0 to IMAGE_BUFFER_SIZE of the line IMAGE_VERTICAL_POS et IMAGE_VERTICAL_POS + 1 (minimum 2 fires because reasons)
+	po8030_advanced_config(FORMAT_RGB565, IMAGE_X0, IMAGE_VERTICAL_POS, IMAGE_BUFFER_SIZE, IMAGE_HEIGHT, SUBSAMPLING_X1, SUBSAMPLING_X1);
 	dcmi_enable_double_buffering();
 	dcmi_set_capture_mode(CAPTURE_ONE_SHOT);
 	dcmi_prepare();
@@ -87,7 +96,7 @@ static THD_FUNCTION(ProcessImage, arg)
 	uint8_t red_value;
 	uint8_t green_value;
 	uint8_t blue_value;
-	bool un_sur_deux = false;
+	bool one_on_two = false;
 
 	uint16_t new_fire_position = NOT_FOUND;
 	uint8_t counter = 0;
@@ -102,9 +111,9 @@ static THD_FUNCTION(ProcessImage, arg)
 			img_buff_ptr = dcmi_get_last_image_ptr();
 
 			//reading red pixel values
-			un_sur_deux = !(un_sur_deux);
+			one_on_two = !(one_on_two);
 
-			if(un_sur_deux)
+			if(one_on_two)
 			{
 				for(int i = 0; i < IMAGE_BUFFER_SIZE; i += 1)
 				{
