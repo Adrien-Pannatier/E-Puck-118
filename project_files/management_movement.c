@@ -587,9 +587,6 @@ void analysing_intersection(void)
 //		set_led(LED7, 1);
 	}
 
-	//Send crossing for mapping
-	send_crossing(opening_right, opening_front, opening_left);
-
 	//CHECKING IF END OF MAZE
 	if(check_end_of_maze() == true)
 	{
@@ -598,6 +595,8 @@ void analysing_intersection(void)
 	}
 	else
 	{
+		//Send crossing for mapping
+		send_crossing(opening_right, opening_front, opening_left);
 		movement_state = SEARCHING_FIRE;
 	}
 }
