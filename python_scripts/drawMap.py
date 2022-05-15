@@ -529,6 +529,8 @@ class serial_thread(Thread):
         self.contReceive = False
         self.alive = True
         self.need_to_update = False
+        global map_matrix
+        clear_map()
 
         print('Connecting to port {}'.format(port))
 
@@ -554,7 +556,7 @@ class serial_thread(Thread):
             #refresh_map()
 
     #enables the continuous reading
-    def setContReceive(self, val): 
+    def setContReceive(self, val):
         self.contReceive = True
 
     #disables the continuous reading
@@ -599,6 +601,7 @@ reader_thd.start()
 fig, ax = plt.subplots(num=None, figsize=(10, 9), dpi=80)
 ax.set_xlim(0, max_X)
 ax.set_ylim(0, max_Y)
+
 #fig.canvas.set_window_title('Map of the house')
 plt.subplots_adjust(left=0.1, bottom=0.25)
 fig.patch.set_facecolor('black')
@@ -612,17 +615,18 @@ map_reshape = map_matrix.reshape(max_X, max_Y)
 map_plot = plt.imshow(map_reshape, cmap = colormap, norm = perso_norm)
 #plt.plot(np.arange(0,n,1), np.linspace(max_value, max_value, n),lw=1, color='red')
 
+def handle_clear(val):
+    global map_matrix
+    print("cleared")
+    clear_map()
+    map_plot.set_data(map_matrix)
+    fig.canvas.draw_idle()
+
 #timer to update the plot from within the state machine of matplotlib
 #because matplotlib is not thread safe...
 timer = fig.canvas.new_timer(interval=50)
 timer.add_callback(update_plot)
 timer.start()
-
-def handle_clear(val):
-    print("cleared")
-    clear_map()
-    map_plot.set_data(map_matrix)
-    fig.canvas.draw_idle()
 
 #positions of the buttons, sliders and radio buttons
 colorAx             = 'lightgoldenrodyellow'
