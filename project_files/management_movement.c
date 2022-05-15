@@ -216,7 +216,6 @@ void end_of_maze_celebration(void);
 
 
 //Thread of motion management
-
 static THD_WORKING_AREA(waThdMovement, 512);
 static THD_FUNCTION(Movement, arg) {
 
@@ -743,8 +742,7 @@ bool check_end_of_maze(void)
 {
 	if(opening_front && opening_left && opening_right)
 	{
-		if(/*get_calibrated_prox(IR4) <= NOISE_IR && get_calibrated_prox(IR5) <= NOISE_IR &&*/
-			get_calibrated_prox(IR2) <= NOISE_IR && get_calibrated_prox(IR7) <= NOISE_IR){
+		if(get_calibrated_prox(IR2) <= NOISE_IR && get_calibrated_prox(IR7) <= NOISE_IR){
 			return true;
 		}
 		return false;
@@ -758,10 +756,7 @@ void end_of_maze_celebration(void)
 
 	rotate(LEFT_360);
 	rotate(RIGHT_360);
-	rotate(LEFT_360);
-	rotate(RIGHT_360);
-	rotate(LEFT_360);
-	rotate(RIGHT_360);
+
 	waitMelodyHasFinished();
 	chThdSleepMilliseconds(1000);
 }
